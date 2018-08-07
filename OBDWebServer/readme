@@ -6,3 +6,4 @@ sudo pip3 install urllib
 sudo pip3 install zbarlight
 sudo pip3 install xlwt
 sudo pip3 install xpinyin
+sudo pip3 install tornado.web
