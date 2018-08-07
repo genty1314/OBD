@@ -1,0 +1,256 @@
+{% from methods.statics import FRONT_WEBSIDE_NAME %}
+
+{% extends "user_base.html" %}
+
+{% block title %} 注册 {% end %}
+
+{% block header %}
+<style>
+/* Custom, iPhone Retina */ 
+@media only screen and (min-width : 320px) {} 
+
+/* Extra Small Devices, Phones */ 
+@media only screen and (min-width : 480px) {} 
+
+/* Small Devices, Tablets */ 
+@media only screen and (min-width : 768px) {}
+
+/* Medium Devices, Desktops */ 
+@media only screen and (min-width : 992px) {
+  body{
+    background-color: #63bfca;
+  }
+
+  .aclass{
+    width: 600px;
+    border: 1px solid black;
+    margin: 5% auto;
+    border-radius:30px;
+    background-color: white;
+  }
+} 
+
+/* Large Devices, Wide Screens */ 
+@media only screen and (min-width : 1200px) {
+  body{
+    background-color: #63bfca;
+  }
+
+  .aclass{
+    width: 600px;
+    border: 1px solid black;
+    margin: 5% auto;
+    border-radius:30px;
+    background-color: white;
+  }
+}
+
+.header {
+  text-align: center;
+}
+.header h1 {
+  font-size: 200%;
+  color: #333;
+  margin-top: 30px;
+}
+.header p {
+  font-size: 14px;
+}
+</style>
+{% end %}
+
+{% block body %}
+<div class="header">
+  <div class="am-g" style="margin-top: 30px;margin-bottom: 30px">
+        <img src="{{static_url("images/favicon.png")}}" style="border-radius: 50%; width:50px;height: 50px; ">
+        <span style="font-weight:bold;font-size: 25px; margin-left: 5px">{{ FRONT_WEBSIDE_NAME }}</span>
+      </div>
+</div>
+<div class="am-g" style="width: 90%">
+  <div class="am-u-lg-6 am-u-md-8 am-u-sm-centered">
+    <!-- <h1>注册</h1> -->
+    <form method="post" class="am-form" id="register_form">
+      <label for="email">邮箱:</label>
+      <input type="text" id="user_email" name="user_email" placeholder="邮箱" tips= "请输您的电子邮箱"  errortips="邮箱格式不正确">
+      <!-- /br> -->
+      <label for="email">用户名:</label>
+      <input type="text" id="user_name" name="user_name" placeholder="用户名" tips= "请输入您用户名"  errortips="用户名大小不能大于17个字符小于0个字符">
+      <!-- /br> -->
+      <label for="password">密码:</label>
+      <input type="password" id="password" name="password" placeholder="密码" tips="请输入您的密码,区分大小写" errortips="密码不符，不能大于17个字符小于6个字符">
+      <!-- /br> -->
+      <label for="confirm_password">确认密码:</label>
+      <input type="password" id="confirm_password" name="confirm_password" placeholder="密码" tips="请再次输入您的密码" errortips="两次输入的密码不同">
+      </br>
+      <div class="am-cf">
+        <button type="submit" id="register" name="register"  class="am-btn am-btn-warning  am-fl">
+          注 册
+        </button>
+        <a id="login" name="login" class="am-btn am-btn-primary  am-fr">
+          返 回 登 录
+        </a>
+      </div>
+    </br>
+    </form>
+      <!-- <hr>
+    <div class="am-btn-group am-fr">
+      <a href="#" class="am-btn am-btn-success "><i class="am-icon-wechat am-icon-sm"></i> 微信登录</a>
+      <a href="#" class="am-btn am-btn-secondary "><i class="am-icon-qq am-icon-sm"></i> &nbsp QQ &nbsp登录 </a>
+    </div> -->
+  </div>
+</div>
+{% end %}
+
+
+{% block javascript %}
+<script type="text/javascript">
+  // $("input[name='password']").each(function(){
+  //   $(this).val(hex_sha1($(this).val()));
+  // });
+var flag = new Array("0","0","0","0");//用于登录判断
+$(document).ready(function() {
+  verify_register_form('#register_form');
+  /* 注册页面验证 */
+  function verify_register_form(element) {
+    $(element).find('[type=text], [type=password]').on({
+      focus: function() {
+        if (typeof $(this).attr('tips') != 'undefined' && $(this).attr('tips') != '') {
+          $(this).next('.am-text-sm').detach();
+          $(this).after('<span class="am-text-sm am-text-secondary">' + $(this).attr('tips') + '</span>');
+        }
+      },
+      blur: function() {
+        if ($(this).attr('tips') != '') {
+          switch ($(this).attr('name')) {
+            case 'user_name':
+            $(this).next('.am-text-sm').detach();
+            if ($(this).val().length >= 0 && $(this).val().length < 2) {
+              $(this).next('.am-text-sm').detach();
+              $(this).after('<span class="am-text-sm am-text-warning"><i></i>' + $(this).attr('errortips') + '</span>');
+              flag[0]="0";
+              return;
+            }
+            if ($(this).val().length > 17) {
+              $(this).next('.am-text-sm').detach();
+              $(this).after('<span class="am-text-sm am-text-warning"><i></i>' + $(this).attr('errortips') + '</span>');
+              flag[0]="0";
+              return;
+            } else {
+              $(this).next('.am-text-sm').detach();
+              $(this).after('<span class="am-text-sm am-text-success"><i></i>' + "可以使用" + '</span>');
+              flag[0]="1";
+            }
+            return;
+
+            case 'user_email':
+            var _this = $(this);
+            $(this).next('.am-text-sm').detach();
+            var emailreg = /^\w+((-\w+)|(\.\w+))*\@[A-Za-z0-9]+((\.|-)[A-Za-z0-9]+)*\.[A-Za-z0-9]+$/;
+            if (!emailreg.test($(this).val())) {
+              $(this).next('.am-text-sm').detach();
+              $(this).after('<span class="am-text-sm am-text-warning"><i></i>' + $(this).attr('errortips') + '</span>');
+              flag[1]="0";
+              return;
+            } else {
+              $.post('/check_email', {
+                user_email: $(this).val()
+              }, function(result) {
+                if (result.errno == -1) {
+                  _this.next().find('.am-text-sm').detach();
+                  _this.after('<span class="am-text-sm am-text-warning"><i></i>' + result.err + '</span>');
+                  flag[1]="0";
+                } else {
+                  _this.next().find('.am-text-sm').detach();
+                  _this.after('<span class="am-text-sm am-text-success"><i></i>' + result.err + '</span>');
+                  flag[1]="1";
+                }
+              }, 'json');
+            }
+            return;
+
+            case 'password':
+            $(this).next('.am-text-sm').detach();
+            if ($(this).val().length >= 0 && $(this).val().length < 6) {
+              $(this).next('.am-text-sm').detach();
+              $(this).after('<span class="am-text-sm am-text-warning"><i></i>' + $(this).attr('errortips') + '</span>');
+              flag[2]="0";
+              return;
+            }
+            if ($(this).val().length > 17) {
+              $(this).next('.am-text-sm').detach();
+              $(this).after('<span class="am-text-sm am-text-warning"><i></i>' + $(this).attr('errortips') + '</span>');
+              flag[2]="0";
+              return;
+            } else {
+              $(this).next('.am-text-sm').detach();
+              $(this).after('<span class="am-text-sm am-text-success"><i></i>' + "可以使用" + '</span>');
+              flag[2]="1";
+            }
+            return;
+
+            case 'confirm_password':
+            $(this).next('.am-text-sm').detach();
+            if ($(this).val()!=$("#password").val()) {
+              $(this).next('.am-text-sm').detach();
+              $(this).after('<span class="am-text-sm am-text-warning"><i></i>' + $(this).attr('errortips') + '</span>');
+              flag[3]="0";
+              return;
+            } else {
+              $(this).next('.am-text-sm').detach();
+              $(this).after('<span class="am-text-sm am-text-success"><i></i>' + "密码相同" + '</span>');
+              flag[3]="1";
+            }
+            return;
+          }
+        }
+
+      }
+    });
+  }
+})
+
+function getCookie(name){
+  var x = document.cookie.match("\\b" + name + "=([^;]*)\\b");
+  return x ? x[1]:undefined;
+}
+
+$("#register").click(function(event) {
+  event.preventDefault();
+  var email = $("#user_email").val();
+          var pwd = $("#password").val();//sha1加密
+          var user_name = $("#user_name").val();
+          if(flag[0]=="0"|flag[1]=="0"|flag[2]=="0"|flag[3]=="0"){
+           alert("请输入正确注册的信息");
+         }else{
+          var pd = {"user_email":email, "password":hex_sha1(pwd),"user_name":user_name, "_xsrf":getCookie("_xsrf")};
+          $.ajax({
+            type:"post",
+            url:"/userregister",
+            data:pd,
+            datatype: "json",
+            cache:false,
+            success:function(data){
+              data = JSON.parse(data);
+              if (data.errno==-1) {
+                alert(data.err);
+              }else{
+                alert(data.err);
+                window.location.href = "/userlogin"; 
+              }
+            },
+            error:function(XMLHttpRequest, textStatus, errorThrown){
+              alert(XMLHttpRequest+"\n"+textStatus+"\n"+errorThrown);
+            },
+          });
+        }
+        return false;
+      });
+
+
+$("#login").click(function() {
+ window.location.href = "/userlogin"; 
+});
+
+
+</script>
+{% end %}

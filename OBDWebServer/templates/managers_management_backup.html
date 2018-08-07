@@ -1,0 +1,263 @@
+{% extends "secondary_pages_base.html" %}
+
+{% block header %}
+<link rel="stylesheet" href="{{static_url("css/zoomify.min.css")}}">
+<script src="{{static_url("js/zoomify.min.js")}}"></script>
+{% end %}
+{% block secondary_page_name %}
+<a><cite>首页</cite></a>
+<a><cite>OBD图片管理</cite></a>
+{% end %}
+
+{% block body %}
+<xblock>
+    <button class="layui-btn layui-btn-danger" onclick="delAllselect()">
+        <i class="layui-icon">&#xe640;</i>批量删除
+    </button>
+    <button class="layui-btn" onclick="pics_add('添加用户','/manageraddpage','600','400')">
+        <i class="layui-icon">&#xe608;</i>添加
+    </button>
+    <!-- <button class="layui-btn layui-btn-normal" onclick="sort()">
+        <i class="layui-icon">&#xe619;</i>按时间排序
+    </button> -->
+
+    <button class="layui-btn layui-btn-sm x-right" style="padding: 0 7px;"  onclick="javascript:location.replace(location.href);">
+        <i class="layui-icon " >&#xe669;</i>
+    </button>
+
+    <span class="x-right" style="line-height:25px">共有数据：{{count}} 条</span>
+
+
+</xblock>
+<table class="layui-table">
+    <thead>
+        <tr>
+            <th width="1%">
+                <input type="checkbox" onclick="selectAll(this,$(this).is(':checked'))">
+            </th>
+            <th width="5%">ID</th>
+            <th width="5%">姓名</th>
+            <th width="5%">邮箱</th>
+            <th width="5%">是否激活</th>
+            <th width="5%">创建时间</th>
+            <th width="5%">最后登录时间</th>
+
+            <th width="6%">操作</th>
+        </tr>
+    </thead>
+     
+    {% set is_active ={"0":"否","1":"是"} %}
+    {% set active_click ={"0":"1","1":"0"} %}
+    {% set active_icon ={"0":"&#xe62f","1":"&#xe601"} %}
+    {% set active_title ={"0":"激活","1":"禁止"} %}
+    {% set active_color ={"0":"red","1":"green"} %}
+    {% set set_color ={"0":"green","1":"red"} %}
+
+
+
+    {% for one in managers %}
+    <tbody id="x-img">
+        <tr></tr>
+        <tr class="autocut">
+            <td>
+                <input type="checkbox" value="{{one.id}}" name="">
+            </td>
+            <td name="id" title="{{str(one.id or '')}}">{{str(one.id or '')}}</td>
+            <td name="managername" title="{{str(one.managername or '')}}">{{str(one.managername or '')}}</td>
+            <td name="email" title="{{str(one.email or '')}}">{{str(one.email or '')}}</td>
+            <td name="is_active" title="{{is_active[str(one.is_active)]}}"> 
+                <font color="{{active_color[str(one.is_active)]}}">
+                {{is_active[str(one.is_active)]}}
+                </font>
+            </td>
+            <td name="create_time" title="{{str(one.create_time or '')}}">{{str(one.create_time or '')}}</td>
+            <td name="last_login" title="{{str(one.last_login or '')}}">{{str(one.last_login or '')}}</td>
+            <td name="option" class="td-manage">
+                <a style="text-decoration:none" onclick="banner_active(this,{{one.id}},{{active_click[str(one.is_active)]}})" href="javascript:;" title="{{active_title[str(one.is_active)]}}">
+                    <i class="layui-icon" style="color:{{set_color[str(one.is_active)]}};">&#xe631;</i>
+                </a>
+                <a title="修改密码" href="javascript:;" onclick="pic_edit('修改密码','/managereditpage?manager_id={{one.id}}','600','510')"
+                class="ml-5" style="text-decoration:none">
+                <i class="layui-icon">&#xe642;</i>
+            </a>
+            <a title="删除" href="javascript:;" onclick="banner_del(this,{{one.id}})" 
+            style="text-decoration:none">
+            <i class="layui-icon">&#xe640;</i>
+            </a>
+            </td>
+        </tr>
+    </tbody>
+    {% end %}
+</table>
+<div id="page"></div>
+{% end %}
+
+{% block javascript %}
+<script>
+     $('img').click(function () {
+         layer.open({
+              title: "图片",
+              type: 1,
+              offset: 't',
+              area: ['600px', '480px'],
+              content: '<img style="max-width:600px;vertical-align: middle;"" src="'+this.src+'"/>'
+            });
+     });
+    function getCookie(c_name)
+    {
+    if (document.cookie.length>0)
+      {
+      c_start=document.cookie.indexOf(c_name + "=")
+      if (c_start!=-1)
+        { 
+        c_start=c_start + c_name.length+1 
+        c_end=document.cookie.indexOf(";",c_start)
+        if (c_end==-1) c_end=document.cookie.length
+        return unescape(document.cookie.substring(c_start,c_end))
+        } 
+      }
+    return ""
+    }
+
+    layui.use(['laydate','element','laypage','layer'], function(){
+              $ = layui.jquery;//jquery
+              laydate = layui.laydate;//日期插件
+              lement = layui.element;//面包导航
+              laypage = layui.laypage;//分页
+              layer = layui.layer;//弹出层
+
+              //以上模块根据需要引入
+              laypage.render({
+                 cont: 'page'
+                ,skip:true
+                ,pages: {{int((count+page_size-1)/page_size)}}
+                ,first: 1
+                ,curr: {{page_index}}
+                ,last: {{int((count+page_size-1)/page_size)}}
+                ,prev: '<em>上一页</em>'
+                ,next: '<em>下一页</em>'
+                ,jump: function(obj, first){//得到了当前页，用于向服务端请求对应数据
+                        if(!first){
+                            window.location.href="/managermanagement?page="+obj.curr;
+                        }
+                  }
+            }); 
+            });
+
+    //全选
+    function selectAll(obj,statu){
+        $(obj).parents("table").find("#x-img :checkbox").prop("checked",statu);
+    }
+    //批量删除提交
+    function delAllselect () {
+        layer.confirm('确认要删除选中吗？',function(index){
+            $("table").find("#x-img :checkbox").each(function(){
+            if(this.checked){
+                var obj = $(this);
+                $.ajax({
+                    url: "/managermanagement",
+                    type: 'delete',
+                    cache: false,
+                    data: {"pictureid":$(this).val()},
+                    success: function(data) {
+                        obj.parents("tr").remove();
+                    },
+                    error: function(XMLHttpRequest, textStatus, errorThrown) {
+                        layer.msg("删除错误！",{icon:1,time:1000});
+                    }
+                  });
+            }
+            });
+            layer.msg("删除成功！",{icon:1,time:1000});
+        });
+    }
+    /*添加*/
+    function pics_add(title,url,w,h){
+        x_admin_show(title,url,w,h,function () {
+                location.reload();
+            });
+    }
+
+    /*激活*/
+    function banner_active(obj,id,is_active){
+        if (is_active == "1") {
+            title = "确认激活吗？"
+        }else{
+            title = "确认禁止吗？"
+        }
+        layer.confirm(title,function(index){
+            $.ajax({
+                    url: "/manageractive",
+                    type: 'post',
+                    cache: false,
+                    data: {"manager_id":id,
+                            "is_active":is_active},
+                    success: function(data) {
+                        if (data.errno == "1") {
+                            if (is_active == "1") {
+                                $(obj).parents("tr").find("td[name='is_active']").attr("title","激活");
+                                $(obj).parents("tr").find("td[name='is_active'] font").attr("color","green");
+                                $(obj).parents("tr").find("td[name='is_active'] font").html("是");
+                                $(obj).parents("tr").find("td[name='option']").children().first().attr("title","禁止");
+                                $(obj).parents("tr").find("td[name='option']").children().first().attr("onclick","banner_active(this,"+id+",0)");
+                                $(obj).parents("tr").find("td[name='option'] ").children().first().find("i").css("color","red");
+                                layer.msg('已激活!',{icon: 1,time:1000});
+                            }else{
+                                $(obj).parents("tr").find("td[name='is_active']").attr("title","禁止");
+                                $(obj).parents("tr").find("td[name='is_active'] font").attr("color","red");
+                                $(obj).parents("tr").find("td[name='is_active'] font").html("否");
+                                $(obj).parents("tr").find("td[name='option']").children().first().attr("title","激活");
+                                $(obj).parents("tr").find("td[name='option']").children().first().attr("onclick","banner_active(this,"+id+",1)");
+                                $(obj).parents("tr").find("td[name='option'] ").children().first().find("i").css("color","green");
+                                layer.msg('已禁止!',{icon: 1,time:1000});
+                            }
+                        }else{
+                            layer.msg('操作失败!',{icon: 1,time:1000});
+                        }
+                    },
+                    error: function(XMLHttpRequest, textStatus, errorThrown) {
+                        layer.msg("操作错误！",{icon:5,time:1000});
+                    }
+                  });
+            });         
+    }
+
+    // /*启用*/
+    // function banner_start(obj,id){
+    //     layer.confirm('确认要识别吗？',function(index){
+    //         //发异步把用户状态进行更改
+    //         $(obj).parents("tr").find(".td-manage").prepend('<a style="text-decoration:none" onClick="banner_stop(this,id)" href="javascript:;" title="识别"><i class="layui-icon">&#xe601;</i></a>');
+    //         $(obj).parents("tr").find(".td-status").html('<span class="layui-btn layui-btn-normal layui-btn-mini">已显示</span>');
+    //         $(obj).remove();
+    //         layer.msg('已识别!',{icon: 6,time:1000});
+    //     });
+    // }
+
+    // 编辑
+    function pic_edit (title,url,w,h) {
+        x_admin_show(title,url,w,h,""); 
+    }
+    /*删除*/
+    function banner_del(obj,id){
+        layer.confirm('确认要删除吗？',function(index){
+            $.ajax({
+                url: "/managermanagement",
+                type: 'delete',
+                cache: false,
+                data: {"manager_id":id},
+                success: function(data) {
+                    if (data != -1) {
+                        $(obj).parents("tr").remove();
+                        layer.msg('已删除!',{icon:1,time:1000});
+                    }else{
+                        layer.msg('删除错误!',{icon:1,time:1000});
+                    }
+                },
+                error: function(XMLHttpRequest, textStatus, errorThrown) {
+                    layer.msg('删除错误!',{icon:1,time:1000});
+                }
+              });
+        });
+    }
+</script>
+{% end %}

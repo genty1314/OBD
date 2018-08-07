@@ -1,0 +1,387 @@
+{% extends "secondary_pages_base.html" %}
+{% block header %}
+<link rel="stylesheet" href="{{static_url("css/cropper.min.css")}}">
+<link rel="stylesheet" href="{{static_url("css/ImgCropping.css")}}">
+
+<script type="text/javascript" src="{{static_url("js/cropper.min.js")}}"></script>
+<style type="text/css">
+.layui-nav-img.resize{
+    width: 100px;
+    height: 100px;
+}
+.cropper-view-box, .cropper-face {
+    border-radius: 50%;
+}
+
+</style>
+{% end %}
+{% block body %}
+    <form class="layui-form layui-form-pane">
+        <div class="layui-form-item">
+            <label for="L_title" class="layui-form-label">
+                管理员名
+          </label>
+            <div class="layui-input-block">
+                <input type="text" name="managername" required lay-verify="title"
+                autocomplete="off" class="layui-input" value="{{str(manager_infos.managername or '')}}">
+            </div>
+
+            <label for="L_title" class="layui-form-label">
+                唯一标识
+            </label>
+            <div class="layui-input-block">
+                <input type="text" name="id" required lay-verify="title"
+                autocomplete="off" class="layui-input" value="{{str(manager_infos.id or '')}}" disabled="disabled">
+            </div>
+
+            <label for="L_title" class="layui-form-label">
+                注册邮箱
+            </label>
+            <div class="layui-input-block">
+                <input type="text" name="email" required lay-verify="title"
+                autocomplete="off" class="layui-input" value="{{str(manager_infos.email or '')}}" disabled="disabled">
+            </div>
+
+            <label for="L_title" class="layui-form-label">
+                是否激活
+            </label>
+            <div class="layui-input-block">
+                <select lay-verify="required" id="is_active" name="is_active" disabled="disabled">
+                    <option>
+                    </option>
+                    <optgroup>
+                        <option value="0">未激活</option>
+                        <option value="1">已激活</option>
+                    </optgroup>
+                </select>
+            </div>  
+
+            <label for="L_title" class="layui-form-label">
+                原密码
+            </label>
+            <div class="layui-input-block">
+                <input type="password"  name="password" required lay-verify="title"
+                autocomplete="off" class="layui-input">
+            </div>
+
+            <label for="L_title" class="layui-form-label">
+                修改密码
+            </label>
+            <div class="layui-input-block">
+                <input type="password" id="change_password" name="change_password" lay-verify="title"
+                autocomplete="off" class="layui-input" >
+            </div>
+
+            <label for="L_title" class="layui-form-label">
+                再次确认
+            </label>
+            <div class="layui-input-block">
+                <input type="password" id="confirm_password" name="confirm_password" lay-verify="title"
+                autocomplete="off" class="layui-input" >
+            </div>
+            <label for="L_title" class="layui-form-label">
+                创建时间
+            </label>
+            <div class="layui-input-block">
+                <input type="text" name="create_time" required lay-verify="title"
+                autocomplete="off" class="layui-input" value="{{str(manager_infos.create_time or '')}}" disabled="disabled">
+            </div>
+
+            <label for="L_title" class="layui-form-label">
+                最后登录时间
+            </label>
+            <div class="layui-input-block">
+                <input type="text" name="last_login" required lay-verify="title"
+                autocomplete="off" class="layui-input" value="{{str(manager_infos.last_login or '')}}" disabled="disabled">
+            </div>
+           
+           <label class="layui-form-label">
+                    角色
+           </label>
+            <div class="layui-input-block">
+                <select lay-verify="required" id="level" name="level">
+                    <option>
+                    </option>
+                    <optgroup label="角色">
+                        <option value=1> 超级管理员 </option>
+                        <option value=2> 用户管理员 </option>
+                        <option value=3> 图片管理员 </option>
+                    </optgroup>
+                    </optgroup>
+                </select>
+            </div>
+
+            <label class="layui-form-label">
+                    头像
+            </label>
+            <div class="layui-upload layui-input-block">
+              <div class="layui-upload-list">
+                <img id="profile_photo" src="{{static_url(manager_infos.profilephoto)}}" class="layui-nav-img resize" >
+                <p id="profile_photo_text"></p>
+                </div>
+            </div>  
+      </div>
+
+        <div class="layui-form-item">
+            <button class="layui-btn" lay-filter="edit" lay-submit>
+                立即修改
+            </button>
+        </div>
+    </form>
+
+<!--图片裁剪框 start-->
+<div style="display: none" class="tailoring-container">
+    <div class="black-cloth" onclick="closeTailor(this)"></div>
+    <div class="tailoring-content">
+            <div class="tailoring-content-one">
+                <label title="上传图片" for="chooseImg" class="l-btn choose-btn">
+                    <input type="file" accept="image/jpg,image/jpeg,image/png" name="file" id="chooseImg" class="hidden" onchange="selectImg(this)">
+                    选择图片
+                </label>
+                <div class="close-tailoring"  onclick="closeTailor(this)">×</div>
+            </div>
+            <div class="tailoring-content-two">
+                <div class="tailoring-box-parcel">
+                    <img id="tailoringImg">
+                </div>
+                <div class="preview-box-parcel">
+                    <p>图片预览：</p>
+                    <div class="square previewImg"></div>
+                    <div class="circular previewImg"></div>
+                </div>
+            </div>
+            <div class="tailoring-content-three">
+                <button class="l-btn cropper-reset-btn">复位</button>
+                <button class="l-btn cropper-rotate-btn">旋转</button>
+                <button class="l-btn cropper-scaleX-btn">换向</button>
+                <button class="l-btn sureCut" id="sureCut">确定</button>
+            </div>
+        </div>
+</div>
+<!--图片裁剪框 end-->
+
+{% end %}
+
+{% block javascript %}
+<script type="text/javascript" src="{{static_url("js/sha1.js")}}"></script>
+<script src="https://blueimp.github.io/JavaScript-Canvas-to-Blob/js/canvas-to-blob.js"></script>
+<script type="text/javascript">
+/////////////////////////////////////////////////
+$("#level").val("{{manager_infos.level}}"); 
+$('#level').attr("disabled","disabled"); 
+//弹出框水平垂直居中
+(window.onresize = function () {
+    var win_height = $(window).height();
+    var win_width = $(window).width();
+    if (win_width <= 768){
+        $(".tailoring-content").css({
+            "top": (win_height - $(".tailoring-content").outerHeight())/2,
+            "left": 0
+        });
+    }else{
+        $(".tailoring-content").css({
+            "top": (win_height - $(".tailoring-content").outerHeight())/2,
+            "left": (win_width - $(".tailoring-content").outerWidth())/2
+        });
+    }
+})();
+
+//弹出图片裁剪框
+$("#profile_photo").on("click",function () {
+    $(".tailoring-container").toggle();
+});
+//图像选择
+function selectImg(file) {
+    if (!file.files || !file.files[0]){
+        return;
+    }
+    var reader = new FileReader();
+    reader.onload = function (evt) {
+        var replaceSrc = evt.target.result;
+        //更换cropper的图片
+        $('#tailoringImg').cropper('replace', replaceSrc,false);//默认false，适应高度，不失真
+    }
+    reader.readAsDataURL(file.files[0]);
+}
+//cropper图片裁剪
+$('#tailoringImg').cropper({
+    aspectRatio: 1/1,//默认比例
+    preview: '.previewImg',//预览视图
+    guides: false,  //裁剪框的虚线(九宫格)
+    autoCropArea: 0.5,  //0-1之间的数值，定义自动剪裁区域的大小，默认0.8
+    movable: false, //是否允许移动图片
+    dragCrop: true,  //是否允许移除当前的剪裁框，并通过拖动来新建一个剪裁框区域
+    movable: true,  //是否允许移动剪裁框
+    resizable: true,  //是否允许改变裁剪框的大小
+    zoomable: false,  //是否允许缩放图片大小
+    mouseWheelZoom: false,  //是否允许通过鼠标滚轮来缩放图片
+    touchDragZoom: true,  //是否允许通过触摸移动来缩放图片
+    rotatable: true,  //是否允许旋转图片
+    crop: function(e) {
+        // 输出结果数据裁剪图像。
+    }
+});
+//旋转
+$(".cropper-rotate-btn").on("click",function () {
+    $('#tailoringImg').cropper("rotate", 45);
+});
+//复位
+$(".cropper-reset-btn").on("click",function () {
+    $('#tailoringImg').cropper("reset");
+});
+//换向
+var flagX = true;
+$(".cropper-scaleX-btn").on("click",function () {
+    if(flagX){
+        $('#tailoringImg').cropper("scaleX", -1);
+        flagX = false;
+    }else{
+        $('#tailoringImg').cropper("scaleX", 1);
+        flagX = true;
+    }
+    flagX != flagX;
+});
+
+//base64 转文件
+function dataURLtoFile(dataurl, filename) {//将base64转换为文件
+    var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+    bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+    while(n--){
+        u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, {type:mime});
+}
+
+//裁剪后的处理
+$("#sureCut").on("click",function () {
+    if ($("#tailoringImg").attr("src") == null ){
+        return false;
+    }else{
+        var cas = $('#tailoringImg').cropper('getCroppedCanvas');//获取被裁剪后的canvas
+        var base64url = cas.toDataURL('image/png'); //转换为base64地址形式
+        $("#profile_photo").prop("src",base64url);//显示为图片的形式
+        formdata = new FormData();
+        file = dataURLtoFile(base64url,"manager_"+$("input[name='id']").val()+".png");
+        formdata.append("file",file); 
+        $.ajax({  
+            url: "/managerinfo", 
+            type: 'PUT',  
+            data: formdata,  
+            dataType: 'JSON',  
+            cache: false,  
+            processData: false,  
+            contentType: false,
+            success: function (res) {
+                layer.msg(res.msg);
+                if (res.msg == "上传错误") {
+                    //演示失败状态，并实现重传
+                  var demoText = $('#profile_photo_text');
+                  demoText.html('<span style="color: #FF5722;">上传失败</span> <a class="layui-btn layui-btn-xs demo-reload">重试</a>');
+                  demoText.find('.demo-reload').on('click', function(){
+                    $("#sureCut").click();
+                  });
+                }
+            },
+            error: function (data) {
+                //演示失败状态，并实现重传
+                  var demoText = $('#profile_photo_text');
+                  demoText.html('<span style="color: #FF5722;">上传失败</span> <a class="layui-btn layui-btn-xs demo-reload">重试</a>');
+                  demoText.find('.demo-reload').on('click', function(){
+                    uploadInst.upload();
+                  });
+            }
+        }); 
+    }
+    //关闭裁剪框
+    closeTailor();
+});
+//关闭裁剪框
+function closeTailor() {
+    $(".tailoring-container").toggle();
+}
+/////////////////////////////////////////////////
+
+
+
+    $("#role").val("1");
+    $("#is_active").val("{{str(manager_infos.is_active or '')}}");
+    layui.use(['form','layer','upload'], function(){
+        $ = layui.jquery;
+      var form = layui.form
+      ,upload = layui.upload
+      ,layer = layui.layer;
+      
+      //  // 头像图片上传
+      // var uploadInst = upload.render({
+      //   elem: '#profile_photo'
+      //   ,method:"put"
+      //   ,url: '/managerinfo'
+      //   ,data:{
+      //       id : $("input[name='id']").val()
+      //   }
+      //   ,before: function(obj){
+      //     //预读本地文件示例，不支持ie8
+      //     obj.preview(function(index, file, result){
+      //       $('#profile_photo').attr('src', result); //图片链接（base64）
+      //     });
+      //   }
+      //   ,done: function(res){
+      //       layer.msg(res.msg);
+      //   }
+      //   ,error: function(){
+      //     //演示失败状态，并实现重传
+      //     var demoText = $('#profile_photo_text');
+      //     demoText.html('<span style="color: #FF5722;">上传失败</span> <a class="layui-btn layui-btn-xs demo-reload">重试</a>');
+      //     demoText.find('.demo-reload').on('click', function(){
+      //       uploadInst.upload();
+      //     });
+      //   }
+      // });
+
+      //监听提交
+      form.on('submit(edit)', function(data){
+        if (data.field.password == "") {
+            layer.alert("修改名字或密码，请先输入原密码");
+            return false;
+        }
+        if (data.field.managername == ""){
+             layer.alert("名字不能为空");
+             return false;
+        }
+        if(data.field.change_password != data.field.confirm_password){
+            layer.alert("密码不同");
+            return false;
+        }
+        if(data.field.change_password == data.field.password){
+            layer.alert("修改密码与原密码相同");
+            return false;
+        }
+        if(data.field.change_password!=""){
+            data.field.change_password = hex_sha1(data.field.change_password);
+            data.field.confirm_password =  hex_sha1(data.field.confirm_password);
+        }
+        if(data.field.change_password.length<6|data.field.change_password.length>17){
+            layer.alert("密码长度要大于6小于17");
+            return false;
+        }
+        data.field.password = hex_sha1(data.field.password);
+        console.log(data.field.password);
+        data = JSON.stringify(data.field)
+        $.ajax({
+              type:"post",
+              url:"/managerinfo",
+              data:data,
+              datatype: "json",
+              cache:false,
+              success:function(data){
+                alert(data);
+            },
+              error:function(XMLHttpRequest, textStatus, errorThrown){
+                layer.msg(XMLHttpRequest+"\n"+textStatus+"\n"+errorThrown);
+              },
+            });
+      });
+      return false;
+    });
+</script>
+{% end %}

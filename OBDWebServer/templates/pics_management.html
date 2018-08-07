@@ -1,0 +1,882 @@
+{% extends "secondary_pages_base.html" %}
+
+{% block header %}
+<!-- <link rel="stylesheet" href="{{static_url("css/zoomify.min.css")}}"> -->
+<!-- <script src="{{static_url("js/zoomify.min.js")}}"></script> -->
+<link rel="stylesheet" type="text/css" href="{{static_url("lib/mobisscroll3.0/css/mobiscroll.custom-3.0.0-beta2.min.css")}}" /> 
+<script src="{{static_url("lib/mobisscroll3.0/js/mobiscroll.custom-3.0.0-beta2.min.js")}}"></script>
+
+<style type="text/css">
+  /*selct 的样式*/
+  input .portinfo{
+  background-color: #e6e6e6;
+  text-align: center;
+  font-weight: bold;
+  font-size: 2rem;
+  }
+  .portdiv{
+      /*用div的样式代替select的样式*/
+      width: 65px;
+      height: 30px;
+      border-radius: 5px;
+      position: relative;
+  }
+  .portdiv .portselect{
+      /*清除select的边框样式*/
+      border: none;
+      /*清除select聚焦时候的边框颜色*/
+      outline: none;
+      /*将select的宽高等于div的宽高*/
+      width: 110%;
+      height: 20px;
+      line-height: 20px;
+      /*隐藏select的下拉图标*/
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      /*通过padding-left的值让文字居中*/
+      padding-left: 5px;
+      font-size: 13px;
+  }
+   .portdiv:after{
+      content: "";
+      width: 20px;
+      height: 20px;
+      background: url({{static_url("images/xiala.png")}}) no-repeat center;
+      background-size:100% 100%;
+      /*通过定位将图标放在合适的位置*/
+      position: absolute;
+      left: 83%;
+      top: 1px;
+      /*给自定义的图标实现点击下来功能*/
+      pointer-events: none;
+  }
+</style>
+{% end %}
+{% block secondary_page_name %}
+<a><cite>首页</cite></a>
+<a><cite>OBD图片管理</cite></a>
+{% end %}
+
+{% block body %}
+    <div id="Layer1" style="display: none; position: absolute; z-index: 100;"></div>
+<xblock>
+    <form action="/picmanagement" class="layui-inline">
+
+    <div class="layui-inline">
+        <input type="text" class="layui-input" style="width: 95px" placeholder = "开始时间" value = "{{start_date or ""}}" name="start_date" id="start_date">
+    </div>
+    <i class="layui-icon"> &#xe623;</i>
+    <div class="layui-inline">
+        <input type="text" class="layui-input" style="width: 95px" placeholder = "结束时间" value ="{{end_date or ""}}" name="end_date" id="end_date">
+    </div>
+    <button type="button" class="layui-btn layui-btn-xs layui-btn-primary" style="padding: 0 2px" title="重置查找"  onclick="resetsearch()">
+        <i class="layui-icon"  >&#xe669;</i>
+    </button>
+
+    <div class="layui-inline" >
+        <input type="search" class="layui-input" style="width: 150px" placeholder="请输入关键字" value="{{keyword or ""}}" name="keyword" id="keyword">
+    </div>
+    <button type="submit" class="layui-btn layui-btn-warm layui-btn-sm" >
+        <i class="layui-icon">&#xe615;</i>查找
+    </button>
+    </form>
+    &nbsp; 
+    <button class="layui-btn layui-btn-danger layui-btn-sm" onclick="delAllselect()">
+        <i class="layui-icon">&#xe640;</i>批量删除
+    </button>
+    <button class="layui-btn layui-btn-normal layui-btn-sm" onclick="detectAllselect()">
+        <i class="layui-icon">&#xe6b2;</i>批量识别
+    </button>
+    <button class="layui-btn layui-btn-sm" onclick="pics_add('添加图片','/manageraddpics','430','320')">
+        <i class="layui-icon">&#xe608;</i>批量添加
+    </button>
+    <button class="layui-btn layui-btn-sm layui-btn-primary" onclick="OBDinfopatchdownload('excl')">
+        <i class="layui-icon">&#xe601;</i>导出结果
+    </button>
+    <button class="layui-btn layui-btn-sm layui-btn-primary" onclick="OBDinfopatchdownload('imgzip');">
+        <i class="layui-icon">&#xe64a;</i>导出选图
+    </button>
+    <!-- <button class="layui-btn layui-btn-normal" onclick="sort()">
+        <i class="layui-icon">&#xe619;</i>按时间排序
+    </button> -->
+
+    <button class="layui-btn layui-btn-sm x-right" style="padding: 0 7px;margin-top:5px" title="刷新页面"  onclick="reloadcurrtable();">
+        <i class="layui-icon "  >&#xe669;</i>
+    </button>
+
+    <span class="x-right" style="line-height:30px;font-size:1rem;margin-top:5px">共有数据：{{count}} 条</span>
+
+
+</xblock>
+<table class="layui-hide" id="OBDlist" lay-filter="OBDlist"></table>
+
+<!-- <div id="page"></div> -->
+
+<br/>
+<br/>
+<br/>
+
+{% end %}
+
+{% block javascript %}
+<!-- <script type="text/html" id="port_direction">
+    {{!# var port_direction = {"0":"","1":"","2":"","3":""};}}
+    {{!# port_direction[d.port_direction] = "selected";}}
+    {{!#  var cl = '';
+          if(d.port_direction == null){
+            var cl = "visibility:hidden;";
+          }}}
+
+    <div class="portdiv" style="{{! cl}}">
+      <select name="port_direction" lay-verify="" lay-ignore class="portselect" >
+        <option value="" >请选择</option>
+        <option value="0" {{! port_direction["0"]}}>端口朝上</option>
+        <option value="1" {{! port_direction["1"]}}>端口朝下</option>
+        <option value="2" {{! port_direction["2"]}}>端口朝左</option>
+        <option value="3" {{! port_direction["3"]}}>端口朝右</option>
+      </select>
+    </div>  
+</script>
+<script type="text/html" id="zero_port_pos">
+    {{!# var zero_port_pos = {"0":"0口在上","1":"0口在下","2":"0口在左","3":"0口在右"};}}
+    {{!# zero_port_pos[d.zero_port_pos] = "selected";}}
+    {{!#  var cl = '';
+      if(d.zero_port_pos == null){
+        var cl = "visibility:hidden;";
+      }}}
+    <div class="portdiv" style="{{! cl}}">
+      <select name="zero_port_pos" lay-verify="" lay-ignore class="portselect">
+        <option value="" >请选择</option>
+        <option value="0" {{! zero_port_pos["0"]}}>0口在上</option>
+        <option value="1" {{! zero_port_pos["1"]}}>0口在下</option>
+        <option value="2" {{! zero_port_pos["2"]}}>0口在左</option>
+        <option value="3" {{! zero_port_pos["3"]}}>0口在右</option>
+      </select> 
+    </div>
+</script>
+<script type="text/html" id="port_sort">
+    {{!# var port_sort ={"0":"","1":""} ;}}
+    {{!# port_sort[d.port_sort] = "selected";}}
+    {{!#  var cl = '';
+      if(d.port_sort == null){
+        var cl = "visibility:hidden;";
+      }}}
+    <div class="portdiv" style="{{! cl}}">
+      <select name="port_sort" lay-verify="" lay-ignore class="portselect">
+        <option value="" >请选择</option>
+        <option value="0" {{! port_sort["0"]}}>顺时针</option>
+        <option value="1" {{! port_sort["1"]}}>逆时针</option>
+      </select>
+    </div>
+</script> -->
+<script type="text/html" id="port_info">
+     <ul id="port_info_{{! d.id}}" name="port_info" style="display: none;">
+        <li data-val="端口朝上">端口朝上
+            <ul>
+                <li data-val="0口在左">0口在左
+                    <ul>
+                        <li data-val="顺时针">顺时针</li>
+                        <li data-val="逆时针">逆时针</li>
+                    </ul>
+                </li>
+                <li data-val="0口在右">0口在右
+                    <ul>
+                        <li data-val="顺时针">顺时针</li>
+                        <li data-val="逆时针">逆时针</li>
+                    </ul>
+                </li>
+            </ul>
+        </li>
+        <li data-val="端口朝下">端口朝下
+            <ul>
+                <li data-val="0口在左">0口在左
+                    <ul>
+                        <li data-val="顺时针">顺时针</li>
+                        <li data-val="逆时针">逆时针</li>
+                    </ul>
+                </li>
+                <li data-val="0口在右">0口在右
+                    <ul>
+                        <li data-val="顺时针">顺时针</li>
+                        <li data-val="逆时针">逆时针</li>
+                    </ul>
+                </li>
+            </ul>
+        </li>
+        <li data-val="端口朝左">端口朝左
+            <ul>
+                <li data-val="0口在上">0口在上
+                    <ul>
+                        <li data-val="顺时针">顺时针</li>
+                        <li data-val="逆时针">逆时针</li>
+                    </ul>
+                </li>
+                <li data-val="0口在下">0口在下
+                    <ul>
+                        <li data-val="顺时针">顺时针</li>
+                        <li data-val="逆时针">逆时针</li>
+                    </ul>
+                </li>
+            </ul>
+        </li>
+        <li data-val="端口朝右">端口朝右
+            <ul>
+                <li data-val="0口在上">0口在上
+                    <ul>
+                        <li data-val="顺时针">顺时针</li>
+                        <li data-val="逆时针">逆时针</li>
+                    </ul>
+                </li>
+                <li data-val="0口在下">0口在下
+                    <ul>
+                        <li data-val="顺时针">顺时针</li>
+                        <li data-val="逆时针">逆时针</li>
+                    </ul>
+                </li>
+            </ul>
+        </li>
+      </ul>
+</script>
+<script type="text/html" id="picture_path">
+    {{!#  if(d.picture_path){ }}
+    <a class="layui-btn layui-btn-xs" onmouseout="hiddenPic();" onmousemove="hoverpic(event,'static/{{! d.picture_path }}');" onclick="showpic('static/{{! d.picture_path }}')">查看</a>
+    {{!#  } else { }}
+    <a class="layui-btn layui-btn-xs" style="visibility:hidden;">查看</a>
+    {{! }}
+  {{!#  } }}
+</script>
+ 
+<script type="text/html" id="confirmed_picture_path">
+
+    {{!#  if(d.confirmed_picture_path && d.confirmed_picture_path != "0" && d.confirmed_picture_path != "-1"){   }}
+    <a class="layui-btn layui-btn-xs" onmouseout="hiddenPic();" onmousemove="hoverpic(event,'static/{{! d.confirmed_picture_path }}');" onclick="showpic('static/{{! d.confirmed_picture_path }}')">查看</a>
+    {{!#  } else if(d.confirmed_picture_path == "0") {   }}
+    <a class="layui-btn layui-btn-warm layui-btn-xs" >识别中...</a>
+    {{!#  } else if(d.confirmed_picture_path == "-1") { }}
+    <a class="layui-btn layui-btn-danger layui-btn-xs" >识别错误</a>
+    {{!#  } else { }}
+    <a class="layui-btn layui-btn-xs" style="visibility:hidden;">查看</a>
+  {{!#  } }}
+</script>
+
+<script type="text/html" id="operatebar">
+  <a style="text-decoration:none" lay-event="detect" href="javascript:;" title="端口识别">
+      <i class="layui-icon">&#xe62f;</i>
+  </a>
+  <a style="text-decoration:none" lay-event="edit" href="javascript:;" title="修改" >
+    <i class="layui-icon">&#xe642;</i>
+  </a>
+  <a style="text-decoration:none;" lay-event="del" href="javascript:;" title="删除">
+    <i class="layui-icon">&#xe640;</i>
+  </a>
+</script>
+
+<script type="text/javascript">
+  //悬浮小图
+    function hoverpic(e,sUrl){ 
+
+          var x,y; 
+
+          x = e.pageX; 
+
+          y = e.pageY; 
+
+          $("#Layer1").css("left",x+2+'px');
+
+          $("#Layer1").css("top",y+20+'px');
+
+          $("#Layer1").html("<img border='0' style='width:200px' src=\"" + sUrl + "\">");
+
+          $("#Layer1").css("display","");
+
+          } 
+
+    function hiddenPic(){ 
+
+        $("#Layer1").html("");
+
+        $("#Layer1").css("display","none");
+    } 
+
+    var keyword = "{{keyword}}";
+    var start_date = "{{start_date or ""}}";
+    var end_date = "{{end_date or ""}}";
+    var _cur_page = 1;
+    //记录选中的数据:做缓存使用,作为参数传递给后台,然后生成pdf ,压缩
+    var ids =new Array();
+    //当前表格中的全部数据:在表格的checkbox全选的时候没有得到数据, 因此用全局存放变量
+    var table_data = new Array();
+    //关键字高亮
+    $("tbody").textSearch( keyword +" "+ start_date +" "+ end_date);
+
+
+    function download(URL, method, PARAMS) {
+      var temp = document.createElement("form");  //获取表单的所有参数
+      temp.action = URL;
+      temp.method = method;
+      temp.style.display = "none";
+
+      for (var x in PARAMS) {
+          var opt = document.createElement("textarea");
+          opt.name = x;
+          opt.value = PARAMS[x];
+          temp.appendChild(opt);
+      }
+
+      document.body.appendChild(temp);
+      temp.submit();
+
+      return temp;
+    }
+
+    function download_application(url,params) {
+      var lod = layer.load(1, {shade: [0.3,'#000']}); //0.1透明度的白色背景
+      $.ajax({
+                type: "post",
+                url: url,
+                traditional:true,
+                data: params,
+                success: function (data) {
+                    download(url, 'get', data); // 下载文件
+                },
+                error: function (data) {
+                    layer.msg("对不起，出现错误，请稍后重试或联系管理员");
+                },
+                complete: function () {
+                  layer.close(lod);
+                }
+            });
+
+    }
+
+    function OBDinfopatchdownload(obd){
+      if (ids.length > 0) {
+        content = '是否下载勾选的'
+      }else{
+        content = '是否下载所有查询结果'
+      }
+      if (obd == 'imgzip') {
+        req = '图片？'
+      }else{
+        req = '数据？'
+      }
+      layer.confirm(content+req,function(index){
+          layer.close(index);
+          var url = "/managerpatchpic";
+          var ids2str = ids.join(",");
+          params = {
+                "obd":obd,  //导出表格数据用"excl"，导出图片zip数据用"imgzip"
+                "is_correct":"1",
+                "keyword":keyword,
+                "start_date":start_date,
+                "end_date":end_date,
+                "ids":ids2str
+              };
+          method = 'get';
+          download_application(url,params)
+        });
+      }
+    //重置查找
+    function resetsearch() {
+        keyword = "";
+        start_date = "";
+        end_date = "";
+        $("#keyword").val("");
+        $("#start_date").val("");
+        $("#end_date").val("");
+    }
+
+    function getCookie(c_name){
+      if (document.cookie.length>0)
+        {
+        c_start=document.cookie.indexOf(c_name + "=")
+        if (c_start!=-1)
+          { 
+          c_start=c_start + c_name.length+1 
+          c_end=document.cookie.indexOf(";",c_start)
+          if (c_end==-1) c_end=document.cookie.length
+          return unescape(document.cookie.substring(c_start,c_end))
+          } 
+        }
+      return ""
+    }
+
+    //layui
+    layui.use(['laydate','element','laypage','layer','table'], function(){
+              $ = layui.jquery;//jquery
+              laydate_start = layui.laydate;//日期插件
+              laydate_end = layui.laydate;//日期插件
+              lement = layui.element;//面包导航
+              layer.config({
+                      offset: '20%'
+                    })
+              // laypage = layui.laypage;//分页S
+              layer = layui.layer;//弹出层
+              table = layui.table;
+                //执行渲染
+              table.render({
+                  elem: '#OBDlist' //指定原始表格元素选择器（推荐id选择器）
+                  ,id: 'OBDlist'
+                  ,height:parent.$(window).height()
+                  ,url:"/managergetobdlist"+"?is_correct="+"1"+"&keyword="+keyword+"&start_date="+start_date+"&end_date="+end_date
+                  ,limit:30
+                  ,cellMinWidth: 100
+                  ,cellMaxWidth: 200
+                  ,cols:[[{type:'checkbox', fixed: 'left'} 
+                          // ,{field:'id', title: 'ID', sort: true, fixed: 'left'}
+                          ,{field:'code', title: '编号', sort: true, fixed: 'left', edit: 'text'}
+                          ,{field:'name', title: '名字', sort: true, edit: 'text'}
+                          ,{field:'address', title: '地址', sort: true, edit: 'text'}
+                          ,{field:'GPS', title: 'GPS', sort: true}
+                          ,{field:'port_info', align: 'center', title: '端口信息', templet:'#port_info',minWidth: 220}
+                          // ,{field:'port_direction', align: 'center', title: '端口朝向', templet:'#port_direction'}
+                          // ,{field:'zero_port_pos', align: 'center', title: '0口位置', templet:'#zero_port_pos'}
+                          // ,{field:'port_sort', align: 'center', title: '端口排序', templet:'#port_sort'}
+                          ,{field:'ports_occupy', align: 'center', title: '端口占用', minWidth: 180} 
+                          ,{field:'picture_path', align: 'center', title: '原图', templet: '#picture_path'}
+                          ,{field:'confirmed_picture_path', align: 'center', title: '确认图', templet: '#confirmed_picture_path'}
+                          ,{field:'update_time', title: '修改时间', sort: true}
+                          ,{field:'create_time', title: '上传时间', sort: true}
+                          ,{field:'user_id', title: '经办工人', sort: true}
+                          ,{field:'manager_id',width:125, title: '经办管理员', sort: true}
+                          ,{fixed: 'right',title:'操作', width:90, align:'center', toolbar: '#operatebar'}
+                        ]]
+                  ,page: true
+                  ,even: true 
+                  ,done: function(res, curr, count){
+                                //隐藏ID,需要用来批量处理
+                                // $("[data-field='id']").css('display','none');
+                                
+                                _cur_page =curr;
+                                //数据表格加载完成时调用此函数
+                                //如果是异步请求数据方式，res即为你接口返回的信息。
+                                //如果是直接赋值的方式，res即为：{data: [], count: 99} data为当前页数据、count为数据总长度
+
+                                //设置全部数据到全局变量
+                                table_data=res.data;
+             
+                                //在缓存中找到id ,然后设置data表格中的选中状态
+                                //循环所有数据，找出对应关系，设置checkbox选中状态
+                                for(var i=0;i< res.data.length;i++){
+                                    for (var j = 0; j < ids.length; j++) {
+                                        //数据id和要勾选的id相同时checkbox选中
+                                        if(res.data[i].id == ids[j])
+                                        {
+                                            //这里才是真正的有效勾选
+                                            res.data[i]["LAY_CHECKED"]='true';
+                                            //找到对应数据改变勾选样式，呈现出选中效果
+                                            var index= res.data[i]['LAY_TABLE_INDEX'];
+                                            $('.layui-table-fixed-l tr[data-index=' + index + '] input[type="checkbox"]').prop('checked', true);
+                                            $('.layui-table-fixed-l tr[data-index=' + index + '] input[type="checkbox"]').next().addClass('layui-form-checked');
+                                        }
+                                    }
+                                }
+                                //设置全选checkbox的选中状态，只有改变LAY_CHECKED的值， table.checkStatus才能抓取到选中的状态
+                                var checkStatus = table.checkStatus('my-table');
+                                if(checkStatus.isAll){
+                                    $(' .layui-table-header th[data-field="0"] input[type="checkbox"]').prop('checked', true);
+                                    $('.layui-table-header th[data-field="0"] input[type="checkbox"]').next().addClass('layui-form-checked');
+                                }
+                                // //得到所有数据
+                                // console.log(res);
+                                // //得到当前页码
+                                // console.log(curr);
+                                // //得到数据总量
+                                // console.log(count);
+                                
+                                //端口select修改时触发
+                                var port_direction_k2v = {"端口朝上":"0",
+                                                      "端口朝上":"1",
+                                                      "端口朝左":"2",
+                                                      "端口朝右":"3"},
+                                    port_direction_v2k = ["端口朝上",
+                                                          "端口朝上",
+                                                          "端口朝左",
+                                                          "端口朝右"],
+                                    zero_port_pos_k2v = {"0口在左":"0",
+                                                     "0口在右":"1",
+                                                     "0口在上":"2",
+                                                     "0口在下":"3"},
+                                    zero_port_pos_v2k = ["0口在左",
+                                                     "0口在右",
+                                                     "0口在上",
+                                                     "0口在下"],
+                                    port_sort_k2v = {"顺时针":"0",
+                                                 "逆时针":"1"},
+                                    port_sort_v2k = ["顺时针",
+                                                 "逆时针"];
+                                $("ul[name='port_info']").mobiscroll().treelist({
+                                  lang: 'zh',
+                                  theme: 'material',
+                                  display: 'bubble',
+                                  width: [156, 136, 146],
+                                  showScrollArrows:true,
+                                  headerText:'图片端口信息',
+                                  showLabel:['端口朝向', '0口位置', '端口排序'],
+                                  inputClass:'portinfo',
+                                  placeholder: '点击选择图片端口信息',
+                                  labels: ['端口朝向', '0口位置', '端口排序'],
+                                  onSet: function (event, inst) {
+                                      var data_index = $(this).parents("tr").attr("data-index");
+                                      var data = table_data[data_index];
+                                      var info = inst.getVal().split(" ");
+                                      // console.log(info);
+                                      data["port_direction"] = port_direction_k2v[info[0]];
+                                      data["zero_port_pos"] = zero_port_pos_k2v[info[1]];
+                                      data["port_sort"] = port_sort_k2v[info[2]];
+                                      // console.log(data);
+                                      layer.confirm('确认修改吗？',function(index){
+                                        $.ajax({
+                                          type:"post",
+                                          url:"/managereditpic",
+                                          data:JSON.stringify(data),
+                                          datatype: "json",
+                                          cache:false,
+                                          success:function(data){
+                                            layer.msg("修改成功！",{icon:1,time:1000});
+                                          },
+                                          error:function(XMLHttpRequest, textStatus, errorThrown){
+                                            layer.msg(XMLHttpRequest+"\n"+textStatus+"\n"+errorThrown);
+                                          },
+                                        });
+                                      },
+                                      function (index) {
+                                        //取消修改时恢复原值，这里还没搞定
+                                      });
+                                  }
+                                });
+
+                                //初始化端口信息
+                                for (var i = 0; i < table_data.length; i++) {
+                                  tmp = table_data[i];
+                                  if (tmp.port_direction != undefined) {
+                                      $("#port_info_"+tmp.id+"_dummy").val(
+                                      port_direction_v2k[tmp.port_direction]+" "+
+                                      zero_port_pos_v2k[tmp.zero_port_pos]+" "+
+                                      port_sort_v2k[tmp.port_sort]);
+                                  }
+                                }
+
+                                //端口select修改时触发
+                                // $('select.portselect').change(function () { 
+                                //   var OBDinfo = $(this).attr("name");
+                                //   var selectvalue = $(this).children('option:selected').val();
+                                //   var data_index = $(this).parents("tr").attr("data-index");
+                                //   var data = table_data[data_index];
+                                //   data[OBDinfo] = selectvalue;
+                                //   layer.confirm('确认修改吗？',function(index){
+                                //     $.ajax({
+                                //       type:"post",
+                                //       url:"/managereditpic",
+                                //       data:JSON.stringify(data),
+                                //       datatype: "json",
+                                //       cache:false,
+                                //       success:function(data){
+                                //         layer.msg("修改成功！",{icon:1,time:1000});
+                                //     },
+                                //       error:function(XMLHttpRequest, textStatus, errorThrown){
+                                //         layer.msg(XMLHttpRequest+"\n"+textStatus+"\n"+errorThrown);
+                                //       },
+                                //     });
+                                //   },
+                                //   function (index) {
+                                //     //取消修改时恢复原值，这里还没搞定
+                                //   });
+                                // });
+
+                              }
+              });
+
+               //复选框选中监听,将选中的id 设置到缓存数组,或者删除缓存数组
+              table.on('checkbox(OBDlist)', function (obj) {
+                 if(obj.checked==true){
+                     if(obj.type=='one'){
+                         ids.push(obj.data.id);
+                    }else{
+                         for(var i=0;i<table_data.length;i++){
+                             ids.push(table_data[i].id);
+                         }
+                     }
+                 }else{
+                     if(obj.type=='one'){
+                         for(var i=0;i<ids.length;i++){
+                            if(ids[i]==obj.data.id){
+                                 ids.remove(i);
+                             }
+                        }
+                     }else{
+                         for(var i=0;i<ids.length;i++){
+                             for(var j=0;j<table_data.length;j++){
+                                 if(ids[i]==table_data[j].id){
+                                    ids.remove(i);
+                                }
+                             }
+                         }
+                     }
+                 }
+              });
+
+              table.on('edit(OBDlist)', 
+                function(obj){
+                  var value = obj.value //得到修改后的值
+                  ,data = obj.data //得到所在行所有键值
+                  ,field = obj.field; //得到字段
+                  layer.confirm('确认修改吗？',function(index){
+                    $.ajax({
+                      type:"post",
+                      url:"/managereditpic",
+                      data:JSON.stringify(data),
+                      datatype: "json",
+                      cache:false,
+                      success:function(data){
+                        layer.msg("修改成功！",{icon:1,time:1000});
+                    },
+                      error:function(XMLHttpRequest, textStatus, errorThrown){
+                        layer.msg(XMLHttpRequest+"\n"+textStatus+"\n"+errorThrown);
+                      },
+                    });
+                  },
+                  function (index) {
+                    // console.log(obj);
+                    // console.log(table_data);
+                    //取消修改时恢复原值，这里还没搞定
+                  });
+                });
+
+              table.on('tool(OBDlist)', function(obj){
+                var data = obj.data;
+                if(obj.event === 'detect'){
+                  banner_detect(obj,data.id);
+                } else if(obj.event === 'del'){
+                  banner_del(obj,data.id );
+                } else if(obj.event === 'edit'){
+                  pic_edit('修改','/managereditpic?pictureid='+data.id,'600','510')
+                }
+              });
+              //时间选择
+              laydate_start.render({
+                  elem: '#start_date', //指定元素
+                  theme: 'grid'
+                });
+              laydate_end.render({
+                  elem: '#end_date', //指定元素
+                  theme: 'grid'
+                });
+            });
+    //删除数组自定义函数
+    Array.prototype.remove=function(dx)
+    {
+        if(isNaN(dx)||dx>this.length){return false;}
+        for(var i=0,n=0;i<this.length;i++)
+        {
+            if(this[i]!=this[dx])
+            {
+                this[n++]=this[i]
+            }
+        }
+        this.length-=1
+    }
+    //批量删除提交
+    function delAllselect () {
+        layer.confirm('确认要删除选中吗？',function(index){
+          layer.close();
+          for(var i = 0; i < ids.length; i++){              
+            $.ajax({
+                url: "/manageraddpics",
+                type: 'delete',
+                cache: false,
+                data: {"pictureid":ids[i]},
+                success: function(data) {
+                    layer.msg("删除成功！",{icon:1,time:1000});
+                },
+                error: function(XMLHttpRequest, textStatus, errorThrown) {
+                    layer.msg("删除错误！",{icon:1,time:1000});
+                }
+              });
+          }
+            reloadcurrtable();
+        });
+    }
+
+    //批量识别
+    function detectAllselect(){
+        // if (ids.length <= 0) {
+        //   layer.msg("请选择要识别的OBD数据！")
+        //   return ;
+        // }
+        layer.confirm('确认要识别当前页选中的OBD图片吗？',function(index){
+          layer.close(index);
+          if ($("div.layui-form-checked").parents("tr").length == 0) {
+            layer.msg("请勾选需要识别的图片!")
+          }
+          $($("div.layui-form-checked").parents("tr").toArray().reverse()).each(function () {
+            data_index = $(this).attr("data-index");
+            $("tr[data-index='"+data_index+"'] a[lay-event='detect']").eq(0).click();
+          });
+
+          // obj = $("tr[data-index='0'] a[lay-event='detect']");
+          // console.log(obj);
+          // obj.click();
+          // for(var i = 0; i < ids.length; i++){
+          //   $.ajax(
+          //           url: "/managerconfirmpic",
+          //           type: 'post',
+          //           cache: false,
+          //           data: {"pictureid":ids[i]},
+          //           // async: false,
+          //           beforeSend: function(){
+          //            tip = layer.open({
+          //               title: "检查中..."
+          //               ,type: 0
+          //               ,content: '正在识别编号为: [ '+ids[i]+' ]的OBD图片' //注意，如果str是object，那么需要字符拼接。
+          //               // ,area: ['390px', '260px']
+          //               ,shade: 0.3
+          //             });
+          //           },
+          //           success: function(data) {
+          //               if (data.msg == "success" || data.msg == "QrcodeFail") {
+          //                   layer.msg('编号：'+data.id+'OBD图片已识别!',{icon: 1,time:1000});
+          //               }else{
+          //                   layer.msg('编号：'+data.id+'OBD图片识别错误',{icon:5,time:1000});
+          //               }
+          //           },
+          //           error: function(XMLHttpRequest, textStatus, errorThrown) {
+          //               layer.msg('编号：'+data.id+'OBD图片识别错误',{icon:5,time:1000});
+          //           },
+          //           complete: function(XHR, TS){
+          //             layer.closeAll(tip);
+          //          console.log(tip);
+          //             if (i == ids.length - 2) {  
+          //               layer.confirm('识别结束，是否刷新数据？',function(index){
+          //                 layer.close(index);
+          //                 reloadcurrtable(); 
+          //               });
+          //             }
+          //           }
+          //         });
+          // }
+
+        });
+      }
+
+    //添加
+    function pics_add(title,url,w,h){
+        x_admin_show(title,url,w,h,function () {
+                location.reload();
+              });
+    }
+
+    //识别
+    function banner_detect(obj,id){
+            var portinfo = obj.tr.eq(0).find("input.portinfo").val();
+            if (portinfo == "") {
+              layer.msg("缺少端口信息,无法识别！",{icon:5,time:1000});
+              return;
+            }
+            obj.update({
+                confirmed_picture_path: "0"
+              });
+            $.ajax({
+                    url: "/managerconfirmpic",
+                    type: 'post',
+                    cache: false,
+                    data: {"pictureid":id},
+                    success: function(data) {
+                      // console.log(data);
+                        if (data.msg == "success" || data.msg == "QrcodeFail") {
+                            obj.update({
+                              confirmed_picture_path: data.confirmed_picture_path+'?'+Math.random(),
+                              update_time:data.update_time,
+                              ports_occupy:data.ports_occupy,
+                              manager_id:data.manager_id
+                            });
+                            layer.msg('已识别!',{icon: 1,time:1000});
+                        }else{
+                            obj.update({
+                              confirmed_picture_path: "-1"
+                            });
+                            layer.msg("识别错误！",{icon:5,time:1000});
+                        }
+                    },
+                    error: function(XMLHttpRequest, textStatus, errorThrown) {
+                        obj.update({
+                              confirmed_picture_path: "-1"
+                            });
+                        layer.msg("识别错误！",{icon:5,time:1000});
+                    }
+                  });        
+    }
+
+    // 编辑
+    function pic_edit (title,url,w,h) {
+        x_admin_show(title,url,w,h,function () {
+                // location.reload(false);\
+                  reloadcurrtable();
+                });
+    }
+
+    //删除
+    function banner_del(obj,id){
+        layer.confirm('确认要删除吗？',function(index){
+            $.ajax({
+                url: "/manageraddpics",
+                type: 'delete',
+                cache: false,
+                data: {"pictureid":id},
+                success: function(data) {
+                    obj.del();
+                    layer.msg('已删除!',{icon:1,time:1000});
+                },
+                error: function(XMLHttpRequest, textStatus, errorThrown) {
+                    layer.msg('删除错误!',{icon:1,time:1000});
+                }
+              });
+        });
+    }
+
+    //重载当前表格内容
+    function reloadcurrtable() {
+      table.reload('OBDlist', {
+        where:{
+               keyword: keyword,
+               start_date: start_date,
+               end_date:end_date
+          }
+        });
+    }
+
+    //展示图片
+    function showpic(path) {
+        dom = "<div style='text-align:center;'><img src='"+path+"' style= 'max-width:600px;margin: 0 auto'></img></div>"
+        title = "图片";
+        w = '600';h='450';
+        if (title == null || title == '') {
+            title=false;
+        };
+        if (dom == null || dom == '') {
+            dom="404.html";
+        };
+        if (w == null || w == '') {
+            w=800;
+        };
+        if (h == null || h == '') {
+            h=($(window).height() - 50);
+        };
+        perContent = layer.open({
+            type: 1,
+            area: [w*1.2+'px', h*1.2 +'px'],
+            offset: 't',
+            fix: false, //不固定
+            maxmin: true,
+            shadeClose: true,
+            shade:0.4,
+            title: title,
+            content: dom,
+        });
+        // layer.full(perContent);
+    }
+
+
+</script>
+{% end %}

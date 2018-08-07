@@ -1,0 +1,417 @@
+{% extends "secondary_pages_base.html" %}
+
+{% block header %}
+<!-- <link rel="stylesheet" href="{{static_url("css/zoomify.min.css")}}"> -->
+<!-- <script src="{{static_url("js/zoomify.min.js")}}"></script> -->
+<script src="{{static_url("js/jquery.textSearch-1.0.js")}}"></script>
+{% end %}
+{% block secondary_page_name %}
+<a><cite>首页</cite></a>
+<a><cite>OBD图片管理</cite></a>
+{% end %}
+
+{% block body %}
+<xblock>
+    <form action="/picmanagement" class="layui-inline">
+    <label> 查询：</label>
+    <div class="layui-inline" >
+        <input type="text" class="layui-input" style="width: 100px" placeholder="关键字" value="{{keyword or ""}}" name="keyword" id="keyword">
+    </div>
+    <div class="layui-inline">
+        <input type="text" class="layui-input" style="width: 100px" placeholder = "开始时间" value = "{{start_date or ""}}" name="start_date" id="start_date">
+    </div>
+    <i class="layui-icon"> &#xe623;</i>
+    <div class="layui-inline">
+        <input type="text" class="layui-input" style="width: 100px" placeholder = "结束时间" value ="{{end_date or ""}}" name="end_date" id="end_date">
+    </div>
+    <button type="button" class="layui-btn layui-btn-sm layui-btn-primary" style="padding: 0 7px;" title="重置查找"  onclick="resetsearch()">
+        <i class="layui-icon " >&#xe669;</i>
+    </button>
+    <button type="submit" class="layui-btn layui-btn-warm layui-btn-sm" >
+        <i class="layui-icon">&#xe640;</i>查找
+    </button>
+    </form>
+    &nbsp; 
+    <button class="layui-btn layui-btn-danger layui-btn-sm" onclick="delAllselect()">
+        <i class="layui-icon">&#xe640;</i>批量删除
+    </button>
+    <button class="layui-btn layui-btn-normal layui-btn-sm" onclick="detectAllselect()">
+        <i class="layui-icon">&#xe640;</i>批量识别
+    </button>
+    <button class="layui-btn layui-btn-sm" onclick="pics_add('添加图片','/manageraddpics','650','400')">
+        <i class="layui-icon">&#xe608;</i>批量添加
+    </button>
+    <!-- <button class="layui-btn layui-btn-normal" onclick="sort()">
+        <i class="layui-icon">&#xe619;</i>按时间排序
+    </button> -->
+
+    <button class="layui-btn layui-btn-sm x-right" style="padding: 0 7px;margin-top:5px" title="刷新页面"  onclick="window.location.reload();">
+        <i class="layui-icon "  >&#xe669;</i>
+    </button>
+
+    <span class="x-right" style="line-height:30px;font-size:1rem;margin-top:5px">共有数据：{{count}} 条</span>
+
+
+</xblock>
+<table class="layui-table"  style="display: block;height: 100%;overflow-y: scroll;">
+    <thead>
+        <tr>
+            <th width="1%">
+                <input type="checkbox" onclick="selectAll(this,$(this).is(':checked'))">
+            </th>
+            <th width="5%">编号</th>
+            <th width="5%">名称</th>
+            <th width="5%">地址</th>
+            <th width="5%">GPS</th>
+            <th width="5%">端口朝向</th>
+            <th width="5%">0口位置</th>
+            <th width="5%">端口排序</th>
+            <th width="5%">端口占用</th>
+            <th width="5%">原图</th>
+            <th width="5%">确认图</th>
+            <th width="5%">修改时间</th>
+            <th width="5%">上传时间</th>
+            <th width="5%">经办工人</th>
+            <th width="5%">经办管理员</th>
+            <th width="6%">操作</th>
+        </tr>
+    </thead>
+     
+    {% set port_direction = {"0":"端口朝上","1":"端口朝下","2":"端口朝左","3":"端口朝右"} %}
+    {% set port_pos = {"0":"0口在上","1":"0口在下","2":"0口在左","3":"0口在右"} %}
+    {% set port_sort ={"0":"顺时针","1":"逆时针"} %}
+
+    {% for one in pictures %}
+    <tbody id="x-img">
+        <tr></tr>
+        <tr class="autocut">
+            <td>
+                <input type="checkbox" value="{{one.id}}" name="">
+            </td>
+            <td name="code" title="{{str(one.code or '')}}">{{str(one.code or '')}}</td>
+            <td name="name" title="{{str(one.name or '')}}">{{str(one.name or '')}}</td>
+            <td name="address" title="{{str(one.address or '')}}">{{str(one.address or '')}}</td>
+            <td name="GPS" title="{{str(one.GPS or '')}}">{{str(one.GPS or '')}}</td>
+            <td name="port_direction" title="{{port_direction[str(one.port_direction)]}}">{{port_direction[str(one.port_direction)]}}</td>
+            <td name="zero_port_pos" title="{{port_pos[str(one.zero_port_pos)]}}">{{port_pos[str(one.zero_port_pos)]}}</td>
+            <td name="port_sort" title="{{port_sort[str(one.port_sort)]}}">{{port_sort[str(one.port_sort)]}}</td>
+            <td name="ports_occupy" title="{{str(one.ports_occupy)}}">{{str(one.ports_occupy or '')}}</td>
+
+            <td name="picture_path" align="left">
+                {% set picture_path = str(one.picture_path or '') %}
+                <a style="color:green; cursor:pointer" onclick="showpic('{{static_url(picture_path)}}')">查看</a>
+            </td>
+             <td name="confirmed_picture_path" align="left">
+                {% set confirmed_picture_path = str(one.confirmed_picture_path or '') %}
+                <a style="color:green; cursor:pointer" onclick="showpic('{{static_url(confirmed_picture_path)}}')">
+                 {% if confirmed_picture_path %}
+                   查看
+                 {% end %}
+                </a>
+            </td>
+            <td name="update_time" title="{{str(one.update_time or '')}}">{{str(one.update_time or '')}}</td>
+            <td name="" title="{{str(one.create_time or '')}}">{{str(one.create_time or '')}}</td>
+            <td name="create_time" title="{{str(one.user_id or '')}}">{{str(one.user_id or '')}}</td>
+            <td name="manager_id" title="{{str(one.manager_id or '')}}">{{str(one.manager_id or '')}}</td>
+            <td name="option" class="td-manage">
+                <a style="text-decoration:none" onclick="banner_detect(this,{{one.id}})" href="javascript:;" title="端口识别">
+                    <i class="layui-icon">&#xe62f;</i>
+                </a>
+                <a title="修改" href="javascript:;" onclick="pic_edit('修改','/managereditpic?pictureid={{one.id}}','600','510')"
+                class="ml-5" style="text-decoration:none">
+                <i class="layui-icon">&#xe642;</i>
+            </a>
+            <a title="删除" href="javascript:;" onclick="banner_del(this,{{one.id}})" 
+            style="text-decoration:none">
+            <i class="layui-icon">&#xe640;</i>
+            </a>
+            </td>
+        </tr>
+    </tbody>
+    {% end %}
+</table>
+
+<div id="page"></div>
+
+<br/>
+<br/>
+<br/>
+
+{% end %}
+
+{% block javascript %}
+<script>
+     //搜索的关键词和时间
+    var keyword = "{{keyword}}";
+    var start_date = "{{start_date or ""}}";
+    var end_date = "{{end_date or ""}}";
+    var currYear = (new Date()).getFullYear();
+    //关键字高亮
+    $("tbody").textSearch( keyword +" "+ start_date +" "+ end_date);
+    
+    $('img').click(function () { 
+        layer.open({
+          title: "图片",
+          type: 1,
+          offset: 't',
+          area: ['600px', '480px'],
+          content: '<img style="max-width:600px;vertical-align: middle;"" src="'+this.src+'"/>'
+        });
+     });
+
+    function resetsearch() {
+        keyword = "";
+        start_date = "";
+        end_date = "";
+        $("#keyword").val("");
+        $("#start_date").val("");
+        $("#end_date").val("");
+    }
+    function getCookie(c_name)
+    {
+    if (document.cookie.length>0)
+      {
+      c_start=document.cookie.indexOf(c_name + "=")
+      if (c_start!=-1)
+        { 
+        c_start=c_start + c_name.length+1 
+        c_end=document.cookie.indexOf(";",c_start)
+        if (c_end==-1) c_end=document.cookie.length
+        return unescape(document.cookie.substring(c_start,c_end))
+        } 
+      }
+    return ""
+    }
+
+    layui.use(['laydate','element','laypage','layer'], function(){
+              $ = layui.jquery;//jquery
+              laydate_start = layui.laydate;//日期插件
+              laydate_end = layui.laydate;//日期插件
+              lement = layui.element;//面包导航
+              laypage = layui.laypage;//分页
+              layer = layui.layer;//弹出层
+
+              //时间选择
+              laydate_start.render({
+                  elem: '#start_date', //指定元素
+                  theme: 'grid'
+                });
+              laydate_end.render({
+                  elem: '#end_date', //指定元素
+                  theme: 'grid'
+                });
+              //以上模块根据需要引入
+              laypage.render({
+                 elem: 'page'
+                ,skip:true
+                ,count:{{int(count)}}
+                ,first: 1
+                ,limit:{{int(limit)}}
+                ,limits:[15,30,50,70,100,150,200]
+                ,curr: {{page_index}}
+                ,prev: '<em>上一页</em>'
+                ,next: '<em>下一页</em>'
+                ,layout: ['prev','page','next','limit','skip']
+                ,jump: function(obj, first){//得到了当前页，用于向服务端请求对应数据
+                        if(!first){
+                            window.location.href="/picmanagement?page="+obj.curr+"&limit="+obj.limit+"&is_correct="+"1"+"&keyword="+keyword+"&start_date="+start_date+"&end_date="+end_date;
+                        }
+                  }
+            }); 
+            });
+
+    //全选
+    function selectAll(obj,statu){
+        $(obj).parents("table").find("#x-img :checkbox").prop("checked",statu);
+    }
+    //批量删除提交
+    function delAllselect () {
+        layer.confirm('确认要删除选中吗？',function(index){
+            $("table").find("#x-img :checkbox").each(function(){
+            if(this.checked){
+                layer.close();
+                var obj = $(this);
+                $.ajax({
+                    url: "/manageraddpics",
+                    type: 'delete',
+                    cache: false,
+                    data: {"pictureid":$(this).val()},
+                    success: function(data) {
+                        obj.parents("tr").remove();
+                        layer.msg("删除成功！",{icon:1,time:1000});
+                    },
+                    error: function(XMLHttpRequest, textStatus, errorThrown) {
+                        layer.msg("删除错误！",{icon:1,time:1000});
+                    }
+                  });
+            }
+            });
+            window.location.href = "/picmanagement";
+        });
+    }
+    //
+    function detectAllselect(){
+        layer.confirm('确认要识别选中吗？',function(index){
+            layer.close(index);
+            $("table").find("#x-img :checkbox").each(function(){
+            if(this.checked){
+                var obj = this;
+                $(obj).parents("tr").find("td[name='confirmed_picture_path'] a").css('color', 'red');
+                $(obj).parents("tr").find("td[name='confirmed_picture_path'] a").text("识别中...");
+                $.ajax({
+                    url: "/managerconfirmpic",
+                    type: 'post',
+                    cache: false,
+                    data: {"pictureid":$(this).val()},
+                    success: function(data) {
+                        // $(obj).parents("tr").find("td[name='code']").attr("title",data.code);
+                        // $(obj).parents("tr").find("td[name='name']").attr("title",data.name);
+                        // $(obj).parents("tr").find("td[name='address']").attr("title",data.address);
+                        // $(obj).parents("tr").find("td[name='GPS']").attr("title",data.GPS);
+
+                        // $(obj).parents("tr").find("td[name='code']").html(data.code);
+                        // $(obj).parents("tr").find("td[name='name']").html(data.name);
+                        // $(obj).parents("tr").find("td[name='address']").html(data.address);
+                        // $(obj).parents("tr").find("td[name='GPS']").html(data.GPS);
+                        if (data.msg == "success" || data.msg == "QrcodeFail") {
+                            $(obj).parents("tr").find("td[name='confirmed_picture_path'] a").attr('onclick','').click(eval(function(){showpic("/static/"+data.confirmed_picture_path)}));
+                            $(obj).parents("tr").find("td[name='confirmed_picture_path'] a").css('color', 'green');
+                            $(obj).parents("tr").find("td[name='confirmed_picture_path'] a").text("查看");
+                            $(obj).parents("tr").find("td[name='update_time']").html(data.update_time);
+                            $(obj).parents("tr").find("td[name='manager_id']").html(data.manager_id);
+                            $(obj).parents("tr").find("td[name='ports_occupy']").html(data.ports_occupy);
+                            $(obj).parents("tr").find("td[name='update_time']").attr("title",data.update_time);
+                            $(obj).parents("tr").find("td[name='manager_id']").attr("title",data.manager_id);
+                            $(obj).parents("tr").find("td[name='ports_occupy']").attr("title",data.ports_occupy);
+                        }else{
+                            $(obj).parents("tr").find("td[name='confirmed_picture_path'] a").text("无法识别");
+                            layer.msg("识别错误！",{icon:5,time:1000});
+                        }
+                    },
+                    error: function(XMLHttpRequest, textStatus, errorThrown) {
+                        $(obj).parents("tr").find("td[name='confirmed_picture_path'] a").text("无法识别");
+                        layer.msg("识别错误！",{icon:5,time:1000});
+                    }
+                  });
+            }
+            });
+        });
+    }
+    /*添加*/
+    function pics_add(title,url,w,h){
+        x_admin_show(title,url,w,h,function () {
+                location.reload();
+            });
+    }
+
+    /*验证*/
+    function banner_detect(obj,id){
+        layer.confirm('确认识别吗？',function(index){
+            layer.close(index);
+            $(obj).parents("tr").find("td[name='confirmed_picture_path'] a").css('color', 'red');
+            $(obj).parents("tr").find("td[name='confirmed_picture_path'] a").text("识别中...");
+            $.ajax({
+                    url: "/managerconfirmpic",
+                    type: 'post',
+                    cache: false,
+                    data: {"pictureid":id},
+                    success: function(data) {
+                        // $(obj).parents("tr").find("td[name='code']").attr("title",data.code);
+                        // $(obj).parents("tr").find("td[name='name']").attr("title",data.name);
+                        // $(obj).parents("tr").find("td[name='address']").attr("title",data.address);
+                        // $(obj).parents("tr").find("td[name='GPS']").attr("title",data.GPS);
+
+                        // $(obj).parents("tr").find("td[name='code']").html(data.code);
+                        // $(obj).parents("tr").find("td[name='name']").html(data.name);
+                        // $(obj).parents("tr").find("td[name='address']").html(data.address);
+                        // $(obj).parents("tr").find("td[name='GPS']").html(data.GPS);
+                        if (data.msg == "success" || data.msg == "QrcodeFail") {
+                            $(obj).parents("tr").find("td[name='confirmed_picture_path'] a").attr('onclick','').click(eval(function(){showpic("/static/"+data.confirmed_picture_path)}));
+                            $(obj).parents("tr").find("td[name='confirmed_picture_path'] a").css('color', 'green');
+                            $(obj).parents("tr").find("td[name='confirmed_picture_path'] a").text("查看");
+                            $(obj).parents("tr").find("td[name='update_time']").html(data.update_time);
+                            $(obj).parents("tr").find("td[name='manager_id']").html(data.manager_id);
+                            $(obj).parents("tr").find("td[name='ports_occupy']").html(data.ports_occupy);
+                            $(obj).parents("tr").find("td[name='update_time']").attr("title",data.update_time);
+                            $(obj).parents("tr").find("td[name='manager_id']").attr("title",data.manager_id);
+                            $(obj).parents("tr").find("td[name='ports_occupy']").attr("title",data.ports_occupy);
+                            layer.msg('已识别!',{icon: 1,time:1000});
+                        }else{
+                            $(obj).parents("tr").find("td[name='confirmed_picture_path'] a").text("无法识别");
+                            layer.msg("识别错误！",{icon:5,time:1000});
+                        }
+                    },
+                    error: function(XMLHttpRequest, textStatus, errorThrown) {
+                        $(obj).parents("tr").find("td[name='confirmed_picture_path'] a").text("无法识别");
+                        layer.msg("识别错误！",{icon:5,time:1000});
+                    }
+                  });
+            });         
+    }
+
+    // /*启用*/
+    // function banner_start(obj,id){
+    //     layer.confirm('确认要识别吗？',function(index){
+    //         //发异步把用户状态进行更改
+    //         $(obj).parents("tr").find(".td-manage").prepend('<a style="text-decoration:none" onClick="banner_stop(this,id)" href="javascript:;" title="识别"><i class="layui-icon">&#xe601;</i></a>');
+    //         $(obj).parents("tr").find(".td-status").html('<span class="layui-btn layui-btn-normal layui-btn-mini">已显示</span>');
+    //         $(obj).remove();
+    //         layer.msg('已识别!',{icon: 6,time:1000});
+    //     });
+    // }
+
+    // 编辑
+    function pic_edit (title,url,w,h) {
+        x_admin_show(title,url,w,h,function () {
+                location.reload();
+            }); 
+    }
+    /*删除*/
+    function banner_del(obj,id){
+        layer.confirm('确认要删除吗？',function(index){
+            $.ajax({
+                url: "/manageraddpics",
+                type: 'delete',
+                cache: false,
+                data: {"pictureid":id},
+                success: function(data) {
+                    $(obj).parents("tr").remove();
+                    layer.msg('已删除!',{icon:1,time:1000});
+                },
+                error: function(XMLHttpRequest, textStatus, errorThrown) {
+                    layer.msg('删除错误!',{icon:1,time:1000});
+                }
+              });
+        });
+    }
+
+    function showpic(path) {
+        dom = "<div style='text-align:center;'><img src='"+path+"' style= 'max-width:100%;max-height:100%;margin: 0 auto'></img></div>"
+        title = "图片";
+        w = '600';h='450';
+        if (title == null || title == '') {
+            title=false;
+        };
+        if (dom == null || dom == '') {
+            dom="404.html";
+        };
+        if (w == null || w == '') {
+            w=800;
+        };
+        if (h == null || h == '') {
+            h=($(window).height() - 50);
+        };
+        layer.open({
+            type: 1,
+            area: [w+'px', h +'px'],
+            offset: 'lt',
+            fix: false, //不固定
+            maxmin: true,
+            shadeClose: true,
+            shade:0.4,
+            title: title,
+            content: dom,
+        });
+    }
+</script>
+{% end %}

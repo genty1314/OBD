@@ -1,0 +1,184 @@
+{% extends "user_base.html" %}
+
+{% block title %} 登录 {% end %}
+
+{% block header %}
+<style>
+/* Custom, iPhone Retina */ 
+@media only screen and (min-width : 320px) {} 
+
+/* Extra Small Devices, Phones */ 
+@media only screen and (min-width : 480px) {} 
+
+/* Small Devices, Tablets */ 
+@media only screen and (min-width : 768px) {}
+
+/* Medium Devices, Desktops */ 
+@media only screen and (min-width : 992px) {
+  body{
+    background-color: #63bfca;
+}
+
+.aclass{
+    width: 600px;
+    border: 1px solid black;
+    margin: 5% auto;
+    border-radius:30px;
+    background-color: white;
+}
+} 
+
+/* Large Devices, Wide Screens */ 
+@media only screen and (min-width : 1200px) {
+  body{
+    background-color: #63bfca;
+}
+
+.aclass{
+    width: 600px;
+    border: 1px solid black;
+    margin: 5% auto;
+    border-radius:30px;
+    background-color: white;
+}
+}
+
+.header {
+  text-align: center;
+}
+.header h1 {
+  font-size: 200%;
+  color: #333;
+  margin-top: 30px;
+}
+.header p {
+  font-size: 14px;
+}
+</style>
+{% end %}
+
+{% block body %}
+    <div class="header">
+      <div class="am-g" style="margin-top: 30px;margin-bottom: 30px">
+        <img src="{{static_url("images/favicon.png")}}" style="border-radius: 50%; width:50px;height: 50px; ">
+        <span style="font-weight:bold;font-size: 25px; margin-left: 5px">{{ FRONT_WEBSIDE_NAME }}</span>
+      </div>
+    </div>
+    <div class="am-g" style="width: 90%">
+      <div class="am-u-lg-6 am-u-md-8 am-u-sm-centered">
+        <!-- <h1>登录</h1> -->
+        <form method="post" class="am-form">
+          <label for="email">邮箱:</label>
+          <input type="text" id="user_email" name="user_email" placeholder="邮箱" tips= "请输入您注册账号时的电子邮箱"  errortips="邮箱格式不正确">
+          <!-- <br> -->
+          <label for="password">密码:</label>
+          <input type="password" id="password" name="password" placeholder="密码" tips="请输入您的密码,区分大小写" errortips="密码不符合规则">
+          <!-- <br> -->
+          <label for="check_code"> 
+            验证码确认
+          <!-- src="/check_code" 单独运行时没问题,上了supervisor和nginx就不行了-->
+          <img src="/check_code" onclick="ChangeCode();" id="imgCode"> 
+          </label>
+          <input type="text" id="check_code" name="check_code" placeholder="验证码" tips="请输入验证码" errortips="验证码错误">
+          <!-- <br> -->
+          <label for="remember_me">
+            <input id="remember_me" name="remember_me" type="checkbox" value="true">
+            记住密码
+          </label>
+          <br/>
+          <div class="am-cf">
+            <button type="submit" id="login" name="login" class="am-btn am-btn-primary am-fl">
+              登 录
+            </button>
+            <a id="register" name="register"  class="am-btn am-btn-warning  am-fr">
+              注 册
+            </a>
+            <a id="forgetpwd" name="forget"  class="am-btn am-btn-default  am-fr" style="display: none;">
+              忘记密码
+            </a>
+          </div>
+          <br/>
+        </form>
+      <!-- <hr>
+    <div class="am-btn-group am-fr">
+      <a href="#" class="am-btn am-btn-success "><i class="am-icon-wechat am-icon-sm"></i> 微信登录</a>
+      <a href="#" class="am-btn am-btn-secondary "><i class="am-icon-qq am-icon-sm"></i> &nbsp QQ &nbsp登录 </a>
+    </div> -->
+      </div>
+    </div>
+{% end %}
+    
+
+{% block javascript %}
+<script type="text/javascript">
+  // $("input[name='password']").each(function(){
+  //   $(this).val(hex_sha1($(this).val()));
+  // });
+  // 
+  function _getRandomString(len) {  
+    len = len || 32;  
+    var $chars = 'ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678'; // 默认去掉了容易混淆的字符oOLl,9gq,Vv,Uu,I1  
+    var maxPos = $chars.length;  
+    var pwd = '';  
+    for (i = 0; i < len; i++) {  
+        pwd += $chars.charAt(Math.floor(Math.random() * maxPos));  
+    }  
+    return pwd;  
+}  
+
+  function ChangeCode() {
+      var code=document.getElementById('imgCode');
+//        sec 加问号就会再次发送请求
+      code.src = code.src.split("?")[0]+"?ran="+_getRandomString(4);
+  }
+  function getCookie(name){
+    var x = document.cookie.match("\\b" + name + "=([^;]*)\\b");
+    return x ? x[1]:undefined;
+  }
+
+  $("#login").click(function(event) {
+          event.preventDefault();
+          event.stopPropagation();
+          var email = $("#user_email").val();
+          var pwd = $("#password").val();//sha1加密
+          var check_code = $("#check_code").val();
+          var rem = $("#remember_me").is(':checked');
+          if (!check_code) {
+            alert('验证码不能为空')
+            return ;
+          }
+          if (!email) {
+            alert('请输入邮箱');
+          }else if(!pwd){
+            alert('请输入密码');
+          }else{
+            var pd = {"user_email":email, "password":hex_sha1(pwd),"check_code":check_code,"remember_me":rem, "_xsrf":getCookie("_xsrf")};
+            $.ajax({
+              type:"post",
+              url:"/userlogin",
+              data:pd,
+              datatype: "json",
+              cache:false,
+              success:function(data){
+                data = JSON.parse(data);
+                if (data.errno==-1) {
+                  $("#imgCode").click();
+                  alert(data.err);
+                }else{
+                  window.location.href = data.err;
+                }
+              },
+              error:function(XMLHttpRequest, textStatus, errorThrown){
+                alert(XMLHttpRequest+"\n"+textStatus+"\n"+errorThrown);
+              },
+            });
+          }
+          return false;
+        });
+
+
+  $("#register").click(function() {
+    window.location.href = "/userregister"
+  });
+</script>
+{% end %}

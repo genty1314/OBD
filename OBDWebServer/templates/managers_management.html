@@ -1,0 +1,498 @@
+{% extends "secondary_pages_base.html" %}
+
+{% block header %}
+<link rel="stylesheet" href="{{static_url("css/zoomify.min.css")}}">
+<script src="{{static_url("js/zoomify.min.js")}}"></script>
+<script src="{{static_url("js/jquery.textSearch-1.0.js")}}"></script>
+{% end %}
+{% block secondary_page_name %}
+<a><cite>首页</cite></a>
+<a><cite>OBD图片管理</cite></a>
+{% end %}
+
+{% block body %}
+<xblock>
+    <div class="managerTable">
+            搜索:
+                      <div class="layui-inline"> 
+                                <input name="id" class="layui-input" id="searchReload" autocomplete="off">
+                      </div>
+           <button class="layui-btn"  type="button"  data-type="reload" id="searchid" >搜索</button>
+           <button type="button" class="layui-btn layui-btn-sm layui-btn-primary" style="padding: 0 7px;" title="重置查找"  onclick="resetsearch()">
+                     <i class="layui-icon " >&#xe669;</i>
+           </button>
+
+           <button class="layui-btn layui-btn-danger" type="button" onclick="delAllselect()">
+                      <i class="layui-icon">&#xe640;</i>批量删除
+           </button>
+           <button class="layui-btn layui-btn-sm" type="button" onclick="pics_add('添加用户','/manageraddpage','600','400')">
+                     <i class="layui-icon">&#xe608;</i>添加   <!-- button加上type=“button”，区分form中的button(tyep=submit)否则会跳到manageraddpage页面的form表单中会闪退<i class="layui-icon">&#xe608;</i>添加-->
+           </button>
+ 
+    <!-- <button class="layui-btn layui-btn-normal" onclick="sort()">
+        <i class="layui-icon">&#xe619;</i>按时间排序
+    </button> -->
+
+           <button class="layui-btn layui-btn-sm x-right" style="padding: 0 7px;"  onclick=" reloadcurrtable() ">
+                      <i class="layui-icon " >&#xe669;</i>    <!--刷新--> 
+           </button>
+   <!--
+    <span class="x-right" style="line-height:25px">共有数据：{{count}} 条</span>
+   -->
+ </div>
+</xblock>
+<table class=" layui-table"  id="OBDmanager"  lay-filter="OBDmanager"></table><!-- 选择器-->
+{% end %}
+
+{% block javascript %}
+
+<!-- toolbar - 绑定列工具条-->
+<!--  最右一列：操作-->
+
+<script type="text/html"  id="operatebar">
+     {{!# if(d.is_active==0|| d.is_active==""){    }}
+             <a   style="text-decoration:none" lay-event="active" href="javascript:;" title="激活">
+                  <i class="layui-icon" style="color:green">&#xe631;</i>
+             </a>
+     {{!#  }else {  }}
+              <a   style="text-decoration:none" lay-event="active" href="javascript:;" title="禁用">
+                  <i class="layui-icon" style="color:red">&#xe631;</i>
+              </a>
+    {{!# } }}
+    <a  style="text-decoration:none"  lay-event="edit" href="javascript:;" title="修改密码" >
+          <i class="layui-icon">&#xe642;</i>
+    </a>
+    <a  style="text-decoration:none"  lay-event="del" href="javascript:;" title="删除">
+          <i class="layui-icon">&#xe640;</i>
+    </a>
+</script>
+
+<script type="text/html"  id="active_manager">
+    {{!# if(d.is_active==1){  }}
+           <a   style="text-decoration:none" lay-event="active" href="javascript:;" title="已激活" >
+                  <font  color="green">已激活</font>
+          </a>
+    {{!# }else{ }}
+           <a   style="text-decoration:none" lay-event="active" href="javascript:;" title="已禁用">
+                   <font  color="red">已禁止</font>
+          </a>
+    {{!# } }}
+</script>
+
+<script type="text/html"  id="level">   
+    {{!#  if(d.level ==1 ){  }}
+           <a   style="text-decoration:none"  href="javascript:;" title="超级管理员" >
+                  <font  color="green">超级管理员</font>
+          </a>
+    {{!# }else{ }}
+    {{!#       if(d.level==2){  }}
+           <a   style="text-decoration:none" href="javascript:;" title="普通管理员">
+                   <font  color="green">普通管理员</font>
+          </a>
+    {{!#       }else{   }}
+          <a   style="text-decoration:none" href="javascript:;" title="图片管理员">
+                   <font  color="green">图片管理员</font>
+          </a>
+    {{!#              }  }}
+    {{!#   }  }}
+</script>
+<script>
+           var keyword ="{{keyword}}";
+           var ids =new Array(); //定义全局变量,用于存放选中数据的ID
+           var table_data=new Array();
+          layui.use(['table','element'] ,function(){
+              $=layui.jquery;
+              var table=layui.table;
+              var element=layui.element;
+              var tableIns=table.render({
+                  elem:'#OBDmanager'    //关联的table.id
+                  ,height:500
+                  ,url:"/managermanagementgetobdlist"+"?is_correct="+"1"+"&id="+keyword  // 接口数据未定"id=&page=1&limit=10"
+                  ,cellMinWidth:100
+                  //,cellMaxWidth:300
+                 ,limit:10
+                 ,cols:[[  //表头
+                       {checkbox:true,fixed:'left'}
+                      ,{field:'id',title:'ID',sort:true,fiexd:'left'}
+                      ,{field:'managername',title:'姓名',sort:true}  
+                      ,{field: 'email', title: '邮箱', sort:true}
+                      ,{field: 'is_active', title: '激活',templet:'#active_manager',sort:true} 
+                      ,{field: 'level', title: '角色',templet:'#level',event:'levelselect',sort:true} 
+                      ,{field: 'create_time', title: '创建时间', sort:true}
+                      ,{field: 'last_login', title: '最后登录时间',sort: true}
+                      ,{field: 'right',title:'操作', align:'center', toolbar: '#operatebar',fixed:'right',sort:true }  
+                      //toolbar 绑定列工具条。设定后，可在每行列中出现一些自定义的操作性按钮
+                  ]]
+                  ,id:'OBDmanager'
+                  ,page:{
+                         //layout:['count','prev','page','next'],
+                        //curr: 1,   //设定初始在第1页
+                        //limit:10, //每页多少数据
+                        // groups:5  //只显示5个连续页码
+                  } //开启分页
+                  ,even: true 
+                  ,done: function(res, curr, count){
+                                _cur_page =curr;
+                                //数据表格加载完成时调用此函数
+                                //如果是异步请求数据方式，res即为你接口返回的信息。
+                                //如果是直接赋值的方式，res即为：{data: [], count: 99} data为当前页数据、count为数据总长度
+
+                                //设置全部数据到全局变量
+                                table_data=res.data;
+             
+                                //在缓存中找到id ,然后设置data表格中的选中状态
+                                //循环所有数据，找出对应关系，设置checkbox选中状态
+                                for(var i=0;i< res.data.length;i++){
+                                    for (var j = 0; j < ids.length; j++) {
+                                        //数据id和要勾选的id相同时checkbox选中
+                                        if(res.data[i].id == ids[ j])
+                                        {
+                                            //这里才是真正的有效勾选
+                                            res.data[i]["LAY_CHECKED"]='true';
+                                            //找到对应数据改变勾选样式，呈现出选中效果
+                                            var index= res.data[i]['LAY_TABLE_INDEX'];
+                                            $('.layui-table-fixed-l tr[data-index=' + index + '] input[type="checkbox"]').prop('checked', true);
+                                            $('.layui-table-fixed-l tr[data-index=' + index + '] input[type="checkbox"]').next().addClass('layui-form-checked');
+                                        }
+                                    }
+                                }
+                                //设置全选checkbox的选中状态，只有改变LAY_CHECKED的值， table.checkStatus才能抓取到选中的状态
+                                var checkStatus = table.checkStatus('my-table');
+                                if(checkStatus.isAll){
+                                    $(' .layui-table-header th[data-field="0"] input[type="checkbox"]').prop('checked', true);
+                                    $('.layui-table-header th[data-field="0"] input[type="checkbox"]').next().addClass('layui-form-checked');
+                                }
+                                // //得到所有数据
+                                // console.log(res);
+                                // //得到当前页码
+                                // console.log(curr);
+                                // //得到数据总量
+                                // console.log(count);
+                  }
+             });
+
+          table.on( 'tool(OBDmanager)', function(obj){  
+          //注：tool是工具条事件名，OBDmanager是table原始容器的属性 lay-filter="对应的值"
+                var  data=obj.data ;    //获取当前行的数值
+                var layevent=obj.event;
+                if (layevent==='active'){                  
+                        banner_active(obj,data.id,data.is_active );
+                }else  if(layevent==='del'){
+                        banner_del(obj,data.id);
+                }else  if(obj.event==='edit'){
+                        pic_edit('修改','/managereditpage?manager_id='+data.id,' 500','400');
+                }
+                if(obj.event==='levelselect'){
+                         layer.prompt({
+                                formType:2,
+                                title:'权限分配:1:超级管理员，2:用户管理员，3:图片管理员',
+                                value:data.level
+                         },function(value,index){
+                                 layer.close(index);
+                                 
+                                 if(value==1 || value==2|| value==3){
+                                      $.ajax({
+                                          type:"post",
+                                          url:"/managereditlevel",
+                                          data:{"level":value,"manager_id":data.id}
+                                       });
+                                      obj.update({
+                                          level:value
+                                      });
+                                 }
+                                 else{
+                                      layer.msg('输入有误!',{icon: 5,time:1000});
+                                 }
+                         });
+                }
+          });
+
+//复选框选中监听,将选中的id 设置到缓存数组,或者删除缓存数组
+         table.on('checkbox(OBDmanager)', function (obj) {
+                 if(obj.checked==true){
+                     if(obj.type=='one'){
+                         ids.push(obj.data.id);
+                    }else{
+                         for(var i=0;i<table_data.length;i++){
+                             ids.push(table_data[i].id);
+                         }
+                     }
+                 }else{
+                     if(obj.type=='one'){
+                         for(var i=0;i<ids.length;i++){
+                            if(ids[i]==obj.data.id){
+                                 ids.remove(i);
+                             }
+                        }
+                     }else{
+                         for(var i=0;i<ids.length;i++){
+                             for(var j=0;j<table_data.length;j++){
+                                 if(ids[i]==table_data[j].id){
+                                    ids.remove(i);
+                                }
+                             }
+                         }
+                     }
+                 }
+              });
+
+//表格重载
+       var $=layui.$, active={
+            reload: function(){
+                var searchReload=$('#searchReload'); //搜索id=searchReload
+                //重新执行重载
+                table.reload('OBDmanager',{    // testReload 表格
+                    page:{
+                        curr:1  //重新从第一页开始
+                    }
+                    ,where:{
+                            keyword: $("#searchReload").val()
+                    }
+                });
+            }
+        };
+        $('.managerTable .layui-btn').on('click',function(){
+            var type=$(this).data('type');
+            active[type]  ? active[type].call(this): ' ';
+        });
+      //  element.init();
+    });
+//删除数组自定义函数
+    Array.prototype.remove=function(dx)
+    {
+        if(isNaN(dx)||dx>this.length){return false;}
+        for(var i=0,n=0;i<this.length;i++)
+        {
+            if(this[i]!=this[dx])
+            {
+                this[n++]=this[i]
+            }
+        }
+        this.length-=1
+    }
+        $('img').click(function () {
+         layer.open({
+              title: "图片",
+              type: 1,
+              offset: 't',
+              area: ['600px', '480px'],
+              content: '<img style="max-width:600px;vertical-align: middle;"" src="'+this.src+'"/>'
+            });
+     });
+ 
+    function getCookie(c_name)
+    {
+    if (document.cookie.length>0)
+      {
+      c_start=document.cookie.indexOf(c_name + "=")
+      if (c_start!=-1)
+        { 
+        c_start=c_start + c_name.length+1 
+        c_end=document.cookie.indexOf(";",c_start)
+        if (c_end==-1) c_end=document.cookie.length
+        return unescape(document.cookie.substring(c_start,c_end))
+        } 
+      }
+    return ""
+    }
+    function resetsearch(){
+        $("#searchReload").val("")
+        console.log("output");
+    }
+
+    //重载当前表格内容
+    function reloadcurrtable(obj) {
+      /*table.reload('OBDmanager' , {
+        where:{
+               user_id: obj.user_id,
+               is_active:obj.is_active
+               //start_date: start_date,
+               //end_date:end_date
+          }
+        });*/
+     $(".layui-laypage-btn")[0].click(); 
+    }
+
+    //全选
+    function selectAll(obj,statu){
+        $(obj).parents("table").find("#x-img :checkbox").prop("checked",statu);
+    }
+    //批量删除
+   function delAllselect () {
+         console.log("output");
+         layer.confirm('确认要删除选中吗？',function(index){
+          layer.close();
+          for(var i = 0; i < ids.length; i++){       
+               $.ajax({       
+                url: "/managermanagement",
+                type: 'delete',
+                cache: false,
+                data: {"manager_id":ids[i]},
+                success: function(data) {
+                    //$(obj).parents("tr").remove();
+                    layer.msg("删除成功！",{icon:1,time:1000});
+                },
+                error: function(XMLHttpRequest, textStatus, errorThrown) {
+                    layer.msg("删除错误！",{icon:1,time:1000});
+                }
+              });
+              } 
+           reloadcurrtable() ;  //重新请求数据
+      })
+    }
+
+    /*添加*/
+    function pics_add(title,url,w,h){
+        x_admin_show(title,url,w,h,function () {
+                location.reload();
+            });
+        console.log("output");
+    }
+
+    /*激活*/
+   function banner_active(obj,id,is_active){
+        if (is_active != "1") {
+            title = "确认激活吗？"
+        }else{
+            title = "确认禁止吗？"
+        }
+        layer.confirm(title,function(index){
+            layer.close(index);
+            if (is_active==1){
+                      is_active=0;
+            }
+            else{ 
+                     is_active=1;
+            }
+            $.ajax({
+                    url: "/manageractive",
+                    type: 'post',
+                    cache: false,
+                    data: {"manager_id": id,   //发送到服务器端的数据
+                              "is_active": is_active },
+                    success: function(data) {
+                        console.log(data);
+                        console.log(is_active);
+                        if (data.msg == "success" || is_active ==0) {
+                             obj.update({
+                                    is_active:obj.is_active+"?"+Math.random(),
+                                    manager_id:obj.manager_id
+                             });
+                             layer.msg('已禁用!',{icon: 5,time:1000});
+                             //reloadcurrtable(); 
+                        }else{
+                            layer.msg("已激活！",{icon:1,time:1000});
+                            //reloadcurrtable(); 
+                        }
+                    },
+                    error: function(XMLHttpRequest, textStatus, errorThrown) {
+                        layer.msg("识别错误！",{icon:5,time:1000});
+                    }
+                   
+                  }); 
+                // location.reload();      
+                reloadcurrtable();         
+            });                         
+           // reloadcurrtable(); 
+    }
+
+    //激活
+   /* function banner_active(obj,id,is_active){
+       console.log("output1");
+        if (is_active != "1") {
+            title = "确认激活吗？"
+        }else{
+            title = "确认禁止吗？"
+        }
+        layer.confirm(title,function(index){
+            $.ajax({
+                    url: "/useractive",
+                    type: 'post',
+                    cache: false,
+                    
+                    success: function(data) {
+                        if (data.errno == "1") {
+                            if (is_active != "1") {
+                                //is_active=1;
+                                $(obj).parents("tr").find("td[name='is_active']").attr("title","1");
+                                $(obj).parents("tr").find("td[name='is_active'] font").attr("color","green");
+                                $(obj).parents("tr").find("td[name='is_active'] font").html("1");
+                                $(obj).parents("tr").find("td[name='option']").children().first().attr("title","禁止");
+                                $(obj).parents("tr").find("td[name='option']").children().first().attr("onclick","banner_active(this,"+id+",0)");
+                                $(obj).parents("tr").find("td[name='option'] ").children().first().find("i").css("color","red");
+                                layer.msg('已激活!',{icon: 1,time:1000});
+                                console.log("output");
+                                
+                            }else{
+                                data.is_active=-1;
+
+                                $(obj).parents("tr").find("td[name='is_active']").attr("title","0");
+                                $(obj).parents("tr").find("td[name='is_active'] font").attr("color","red");
+                                $(obj).parents("tr").find("td[name='is_active'] font").html("0");
+                                $(obj).parents("tr").find("td[name='option']").children().first().attr("title","激活");
+                                $(obj).parents("tr").find("td[name='option']").children().first().attr("onclick","banner_active(this,"+id+",1)");
+                                $(obj).parents("tr").find("td[name='option'] ").children().first().find("i").css("color","green");
+                                layer.msg('已禁止!',{icon: 1,time:1000});
+                            }
+                        }else{
+                            layer.msg('操作失败!',{icon: 1,time:1000});
+                        }
+                    },
+                    error: function(XMLHttpRequest, textStatus, errorThrown) {
+                        layer.msg("操作错误！",{icon:5,time:1000});
+                    },
+                    data: {"user_id":id,
+                            "is_active":is_active}
+                  });
+            });         
+    }
+    */
+
+    // /*启用*/
+    // function banner_start(obj,id){
+    //     layer.confirm('确认要识别吗？',function(index){
+    //         //发异步把用户状态进行更改
+    //         $(obj).parents("tr").find(".td-manage").prepend('<a style="text-decoration:none" onClick="banner_stop(this,id)" href="javascript:;" title="识别"><i class="layui-icon">&#xe601;</i></a>');
+    //         $(obj).parents("tr").find(".td-status").html('<span class="layui-btn layui-btn-normal layui-btn-mini">已显示</span>');
+    //         $(obj).remove();
+    //         layer.msg('已识别!',{icon: 6,time:1000});
+    //     });
+    // }
+
+       //编辑
+    function pic_edit (title,url,w,h) {
+        x_admin_show(title,url,w,h,function () {
+                 reloadcurrtable() ;
+        });
+    }
+
+    /*删除*/
+    function banner_del(obj,id){
+        layer.confirm('确认要删除吗？',function(index){
+            $.ajax({
+                url: "/managermanagement",
+                type: 'delete',
+                cache: false,
+                data: {"manager_id":id},
+                success: function(data) {
+                    if (data != -1) {
+                        $(obj).parents("tr").remove();
+                        layer.msg('已删除!',{icon:1,time:1000});
+                       //  obj.location.reload();
+                    }else{
+                        layer.msg('删除错误!',{icon:1,time:1000});
+                    }
+                },
+                error: function(XMLHttpRequest, textStatus, errorThrown) {
+                    layer.msg('删除错误!',{icon:1,time:1000});
+                }
+              });
+             location.reload();
+        });
+       
+    }
+
+
+</script>
+
+{% end %}

@@ -1,0 +1,211 @@
+{% extends "secondary_pages_base.html" %}
+
+{% block header %}
+<title>
+   图片-编辑
+</title>
+{% end %}
+
+{% block secondary_page_name %}
+
+{% end %}
+
+{% block body %}
+<form class="layui-form">
+    <div class="layui-form-item">
+        <label for="link" class="layui-form-label">
+            <span class="x-red">*</span>序号
+        </label>
+        <div class="layui-input-inline">
+            <input type="text" id="link" name="id" required 
+            autocomplete="off" class="layui-input" disabled="disabled"  value="{{picture.id}}">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label for="link" class="layui-form-label">
+            <span class="x-red">*</span>编号
+        </label>
+        <div class="layui-input-inline">
+            <input type="text" id="link" name="code" required 
+            autocomplete="off" class="layui-input" disabled="disabled"  value="{{str(picture.code or '')}}">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label for="link" class="layui-form-label">
+            <span class="x-red">*</span>名称
+        </label>
+        <div class="layui-input-inline">
+            <input type="text" id="link" name="name" required 
+            autocomplete="off" class="layui-input" value="{{str(picture.name or '')}}">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label for="link" class="layui-form-label">
+            <span class="x-red">*</span>地址
+        </label>
+        <div class="layui-input-inline">
+            <input type="text" id="link" name="address" required 
+            autocomplete="off" class="layui-input"  value="{{str(picture.address or '')}}">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label for="link" class="layui-form-label">
+            <span class="x-red">*</span>GPS
+        </label>
+        <div class="layui-input-inline">
+            <input type="text" id="link" name="GPS" required 
+            autocomplete="off" class="layui-input" disabled="disabled" value="{{str(picture.GPS or '')}}">
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label for="link" class="layui-form-label">
+            <span class="x-red">*</span>端口位置
+        </label>
+        <div class="layui-input-inline">
+            <select  id="port_direction" name="port_direction">
+                <option>
+                </option>
+                <optgroup>
+                    <option value="0"> 端口朝上</option>
+                    <option value="1"> 端口朝下</option>
+                    <option value="2"> 端口朝左</option>
+                    <option value="3"> 端口朝右</option>
+                </optgroup>
+            </select>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label for="link" class="layui-form-label">
+            <span class="x-red">*</span>0口位置
+        </label>
+        <div class="layui-input-inline">
+            <select  id="zero_port_pos" name="zero_port_pos">
+                <option>
+                </option>
+                <optgroup>
+                    <option value="0"> 0口在上 </option>
+                    <option value="1"> 0口在下 </option>
+                    <option value="2"> 0口在左 </option>
+                    <option value="3"> 0口在右 </option>
+                </optgroup>
+            </select>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label for="link" class="layui-form-label">
+            <span class="x-red">*</span>端口排序
+        </label>
+        <div class="layui-input-inline">
+            <select  id="port_sort" name="port_sort">
+                <option>
+                </option>
+                <optgroup>
+                    <option value="0"> 顺时针 </option>
+                    <option value="1"> 逆时针 </option>
+                </optgroup>
+            </select>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label  class="layui-form-label">原图
+        </label>
+        {% set picture_path = str(picture.picture_path or '') %}
+        <img id="" width="200" src="{{static_url(picture_path)}}">
+    </div>
+
+    <div class="layui-form-item">
+        <label  class="layui-form-label">确认图
+        </label>
+        {% set confirmed_picture_path = str(picture.confirmed_picture_path or '') %}
+
+        <img id="" width="200" src="{{static_url(confirmed_picture_path)}}">
+    </div>
+
+     <div class="layui-form-item">
+        <label for="link" class="layui-form-label">
+            <span class="x-red">*</span>上传时间
+        </label>
+        <div class="layui-input-inline">
+            <input type="text" id="link" name="link" required 
+            autocomplete="off" class="layui-input" disabled="disabled" value="{{str(picture.create_time or '')}}">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label for="link" class="layui-form-label" >
+            <span class="x-red">*</span>修改时间
+        </label>
+        <div class="layui-input-inline">
+            <input type="text" id="link" name="update_time" required 
+            autocomplete="off" class="layui-input" disabled="disabled" value="{{str(picture.update_time or '')}}">
+        </div>
+    </div>
+     <div class="layui-form-item">
+        <label for="link" class="layui-form-label">
+            <span class="x-red">*</span>经办工人
+        </label>
+        <div class="layui-input-inline">
+            <input type="text" id="link" name="user_id" required 
+            autocomplete="off" class="layui-input" disabled="disabled" value="{{str(picture.user_id or '')}}">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label for="link" class="layui-form-label">
+            <span class="x-red">*</span>经办管理
+        </label>
+        <div class="layui-input-inline">
+            <input type="text" id="link" name="manager_id" required 
+            autocomplete="off" class="layui-input" disabled="disabled" value="{{str(picture.manager_id or '')}}">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label for="L_repass" class="layui-form-label">
+        </label>
+        <button  class="layui-btn" lay-filter="edit" lay-submit="">
+            完成
+        </button>
+    </div>
+</form>
+{% end %}
+
+{% block javascript %}
+<script>
+    $("#port_direction").val("{{picture.port_direction}}");
+    $("#zero_port_pos").val("{{picture.zero_port_pos}}");
+    $("#port_sort").val("{{picture.port_sort}}");
+
+
+    layui.use(['form','layer','upload'], function(){
+        $ = layui.jquery;
+        var form = layui.form
+        ,layer = layui.layer;
+
+      //监听提交
+      form.on('submit(edit)', function(data){
+        data = JSON.stringify(data.field)
+        $.ajax({
+              type:"post",
+              url:"/managereditpic",
+              data:data,
+              datatype: "json",
+              cache:false,
+              success:function(data){
+                layer.alert("修改成功", {icon: 6},function () {
+                    // 获得frame索引
+                    var index = parent.layer.getFrameIndex(window.name);
+                    //关闭当前frame
+                    parent.layer.close(index);
+                });
+            },
+              error:function(XMLHttpRequest, textStatus, errorThrown){
+                layer.msg(XMLHttpRequest+"\n"+textStatus+"\n"+errorThrown);
+              },
+            });
+        return false;
+    });
+  });
+</script>
+{% end %}
